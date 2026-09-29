@@ -13,6 +13,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -23,18 +24,22 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.example.model.AppLanguage
 import com.example.model.MainNavigationTab
 import com.example.ui.components.SawaBottomNavBar
+import com.example.ui.screens.AdminDashboardScreen
 import com.example.ui.screens.CandidateDetailScreen
 import com.example.ui.screens.ChatDetailScreen
 import com.example.ui.screens.ChaperoneNoticeDialog
 import com.example.ui.screens.ChatsScreen
 import com.example.ui.screens.CommunityScreen
 import com.example.ui.screens.DiscoveryScreen
+import com.example.ui.screens.EditProfileScreen
 import com.example.ui.screens.FiltersScreen
 import com.example.ui.screens.GoldCenterScreen
 import com.example.ui.screens.MatchCelebrationScreen
 import com.example.ui.screens.MyProfileScreen
 import com.example.ui.screens.OnboardingScreen
+import com.example.ui.screens.PrivacyPolicyScreen
 import com.example.ui.screens.SelfieVerificationScreen
+import com.example.ui.screens.SubscriptionScreen
 import com.example.ui.screens.VideoCallScreen
 import com.example.ui.theme.SawaSawaTheme
 import com.example.viewmodel.MainViewModel
@@ -56,6 +61,12 @@ class MainActivity : ComponentActivity() {
                 SawaSawaTheme {
                     val scope = rememberCoroutineScope()
                     val snackbarHostState = remember { SnackbarHostState() }
+
+                    LaunchedEffect(uiState.adminBroadcastSentToast) {
+                        uiState.adminBroadcastSentToast?.let {
+                            snackbarHostState.showSnackbar("📢 إشعار عام: $it")
+                        }
+                    }
 
                     // Hardware & gesture back navigation
                     BackHandler(enabled = uiState.currentScreen !is ScreenState.Onboarding) {
@@ -93,6 +104,82 @@ class MainActivity : ComponentActivity() {
                                             if (isArabic) "🚀 تم تفعيل التعزيز بنجاح!" else "🚀 Boost activated successfully!"
                                         )
                                     }
+                                }
+                            )
+                        }
+
+                        is ScreenState.Subscriptions -> {
+                            SubscriptionScreen(
+                                language = uiState.language,
+                                onPlanPurchased = { planId, price ->
+                                    viewModel.purchasePlan(planId, price)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            if (isArabic) "👑 مبروك! تم تفعيل اشتراك $price" else "👑 Subscribed to $price"
+                                        )
+                                    }
+                                },
+                                onClose = { viewModel.closeSubscriptions() }
+                            )
+                        }
+
+                        is ScreenState.EditProfile -> {
+                            EditProfileScreen(
+                                user = uiState.currentUser,
+                                language = uiState.language,
+                                onSave = { updatedUser ->
+                                    viewModel.updateUserProfile(updatedUser)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            if (isArabic) "✓ تم حفظ تعديلات الملف الشخصي بنجاح" else "✓ Profile updated successfully"
+                                        )
+                                    }
+                                },
+                                onBack = { viewModel.closeEditProfile() }
+                            )
+                        }
+
+                        is ScreenState.PrivacyPolicy -> {
+                            PrivacyPolicyScreen(
+                                language = uiState.language,
+                                onBack = { viewModel.closePrivacyPolicy() },
+                                onDeleteAccount = {
+                                    viewModel.deleteAccount()
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            if (isArabic) "تم حذف الحساب والبيانات نهائياً" else "Account deleted successfully"
+                                        )
+                                    }
+                                }
+                            )
+                        }
+
+                        is ScreenState.AdminDashboard -> {
+                            AdminDashboardScreen(
+                                candidates = uiState.candidates,
+                                language = uiState.language,
+                                onBack = { viewModel.closeAdminDashboard() },
+                                onToggleVerify = { id -> viewModel.adminToggleVerify(id) },
+                                onToggleGold = { id -> viewModel.adminToggleGold(id) },
+                                onToggleBan = { id ->
+                                    viewModel.adminToggleBan(id)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            if (isArabic) "تم تعديل حالة الحظر للعضو" else "Member ban status updated"
+                                        )
+                                    }
+                                },
+                                onToggleBlur = { id -> viewModel.adminToggleBlur(id) },
+                                onAddCandidate = { newCand ->
+                                    viewModel.adminAddCandidate(newCand)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            if (isArabic) "تم إضافة العضو الجديد للمنصة بنجاح ✓" else "New member added ✓"
+                                        )
+                                    }
+                                },
+                                onSendBroadcast = { title, msg ->
+                                    viewModel.adminSendBroadcast(title, msg)
                                 }
                             )
                         }
@@ -262,11 +349,14 @@ class MainActivity : ComponentActivity() {
                                         MyProfileScreen(
                                             user = uiState.currentUser,
                                             language = uiState.language,
+                                            onEditProfileClick = { viewModel.openEditProfile() },
+                                            onOpenSubscriptions = { viewModel.openSubscriptions() },
+                                            onOpenAdminDashboard = { viewModel.openAdminDashboard() },
+                                            onOpenPrivacyPolicy = { viewModel.openPrivacyPolicy() },
+                                            onOpenSelfieVerification = { viewModel.openSelfieVerification() },
                                             onTogglePhotoBlur = { viewModel.toggleUserPhotoBlur() },
                                             onToggleChaperone = { viewModel.toggleChaperone() },
                                             onToggleLanguage = { viewModel.toggleLanguage() },
-                                            onOpenGoldCenter = { viewModel.openGoldCenter() },
-                                            onOpenSelfieVerification = { viewModel.openSelfieVerification() },
                                             onResetDiscovery = {
                                                 viewModel.resetDiscovery()
                                                 scope.launch {
@@ -275,6 +365,7 @@ class MainActivity : ComponentActivity() {
                                                     )
                                                 }
                                             },
+                                            onLogout = { viewModel.logout() },
                                             modifier = Modifier.padding(innerPadding)
                                         )
                                     }

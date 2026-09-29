@@ -23,14 +23,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CardMembership
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -40,11 +46,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -71,15 +83,20 @@ import com.example.ui.theme.RadiantGoldDark
 fun MyProfileScreen(
     user: CurrentUserProfile,
     language: AppLanguage,
+    onEditProfileClick: () -> Unit,
+    onOpenSubscriptions: () -> Unit,
+    onOpenAdminDashboard: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit,
+    onOpenSelfieVerification: () -> Unit,
     onTogglePhotoBlur: () -> Unit,
     onToggleChaperone: () -> Unit,
     onToggleLanguage: () -> Unit,
-    onOpenGoldCenter: () -> Unit,
-    onOpenSelfieVerification: () -> Unit,
     onResetDiscovery: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isArabic = language == AppLanguage.ARABIC
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -106,22 +123,43 @@ fun MyProfileScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                IconButton(
-                    onClick = onToggleLanguage,
-                    modifier = Modifier
-                        .size(38.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Language,
-                        contentDescription = "Language",
-                        tint = PetroleumGreen,
-                        modifier = Modifier.size(20.dp)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Admin Quick Shortcut
+                    IconButton(
+                        onClick = onOpenAdminDashboard,
+                        modifier = Modifier
+                            .testTag("admin_shortcut_button")
+                            .size(38.dp)
+                            .background(PetroleumGreenDark, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AdminPanelSettings,
+                            contentDescription = "Admin",
+                            tint = RadiantGold,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Language toggle
+                    IconButton(
+                        onClick = onToggleLanguage,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Language,
+                            contentDescription = "Language",
+                            tint = PetroleumGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
 
-            // User Avatar & Completion
+            // User Photo & Name
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -133,6 +171,7 @@ fun MyProfileScreen(
                         .size(110.dp)
                         .clip(CircleShape)
                         .border(3.5.dp, RadiantGold, CircleShape)
+                        .clickable { onEditProfileClick() }
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.profile_sarah),
@@ -188,12 +227,33 @@ fun MyProfileScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Gold Membership Banner (مطابقة لصورة 10.webp)
+                // Primary CTA: Edit Profile Button
+                Button(
+                    onClick = onEditProfileClick,
+                    modifier = Modifier
+                        .testTag("edit_profile_button")
+                        .fillMaxWidth()
+                        .height(46.dp),
+                    shape = RoundedCornerShape(23.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PetroleumGreen)
+                ) {
+                    Icon(imageVector = Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (isArabic) "تعديل الملف الشخصي والبيانات" else "Edit Profile Details",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Gold VIP Subscription Banner (Card with direct click to Subscriptions)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .clickable { onOpenGoldCenter() },
+                        .clickable { onOpenSubscriptions() },
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Box(
@@ -208,17 +268,17 @@ fun MyProfileScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = "👑", fontSize = 20.sp)
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = "👑", fontSize = 22.sp)
+                                Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
-                                        text = if (isArabic) "عضوية سوا سوا GOLD" else "Sawa Sawa GOLD VIP",
+                                        text = if (isArabic) "عضوية سوا سوا GOLD VIP" else "Sawa Sawa GOLD VIP",
                                         fontWeight = FontWeight.Black,
                                         fontSize = 14.sp,
                                         color = Color(0xFF2E2204)
                                     )
                                     Text(
-                                        text = if (isArabic) "12 دردشة فورية و 3 تعزيزات نشطة" else "12 instant chats & 3 active boosts",
+                                        text = "${user.subscriptionPrice} • ينتهي ${user.subscriptionExpiresAt}",
                                         fontSize = 11.sp,
                                         color = Color(0xFF574106)
                                     )
@@ -277,67 +337,81 @@ fun MyProfileScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Selfie Verification Button (مطابقة لصورة 7.webp)
+            // Navigation Menu Options
+            Text(
+                text = if (isArabic) "الحساب والأدوات" else "Account & Tools",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = PetroleumGreen,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable { onOpenSelfieVerification() },
+                    .padding(horizontal = 20.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(PetroleumGreen, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CameraAlt,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = if (isArabic) "سلفي تأكيد الهوية" else "Selfie Verification",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = if (isArabic) "تأكيد شخصيتك الحقيقية والحصول على الشارة" else "Confirm identity and get verified",
-                                fontSize = 11.sp,
-                                color = Color.Gray
-                            )
-                        }
-                    }
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                    // Option 1: Selfie Verification
+                    ProfileMenuRow(
+                        title = if (isArabic) "سلفي توثيق الهوية" else "Selfie Verification",
+                        subtitle = if (isArabic) "توثيق حسابك بالشارة الذهبية" else "Verify account with gold badge",
+                        icon = Icons.Default.CameraAlt,
+                        onClick = onOpenSelfieVerification
+                    )
 
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(14.dp)
+                    Divider(color = Color.LightGray.copy(alpha = 0.3f))
+
+                    // Option 2: Subscription Plans
+                    ProfileMenuRow(
+                        title = if (isArabic) "باقات الاشتراك والدفع" else "Subscriptions & Pricing",
+                        subtitle = if (isArabic) "إدارة الخطط الأسبوعية والشهرية والسنوية" else "Manage weekly, monthly & annual plans",
+                        icon = Icons.Default.CardMembership,
+                        onClick = onOpenSubscriptions
+                    )
+
+                    Divider(color = Color.LightGray.copy(alpha = 0.3f))
+
+                    // Option 3: Admin Dashboard
+                    ProfileMenuRow(
+                        title = if (isArabic) "لوحة التحكم والإدارة (Admin)" else "Admin Dashboard",
+                        subtitle = if (isArabic) "التحكم بالأعضاء، الرقابة، والأسعار" else "Manage members, moderation & campaigns",
+                        icon = Icons.Default.AdminPanelSettings,
+                        onClick = onOpenAdminDashboard
+                    )
+
+                    Divider(color = Color.LightGray.copy(alpha = 0.3f))
+
+                    // Option 4: Privacy Policy & Terms
+                    ProfileMenuRow(
+                        title = if (isArabic) "سياسة الخصوصية والضوابط الشرعية" else "Privacy Policy & Halal Terms",
+                        subtitle = if (isArabic) "ميثاق الأمانة والخصوصية الشرعية" else "Terms of service and data protection",
+                        icon = Icons.Default.MenuBook,
+                        onClick = onOpenPrivacyPolicy
+                    )
+
+                    Divider(color = Color.LightGray.copy(alpha = 0.3f))
+
+                    // Option 5: Reset Discovery
+                    ProfileMenuRow(
+                        title = if (isArabic) "إعادة تصفح جميع المرشحين" else "Reset Swiped Candidates",
+                        subtitle = if (isArabic) "إعادة إظهار الملفات التي تم تخطيها" else "Reset candidate card feed",
+                        icon = Icons.Default.Refresh,
+                        onClick = onResetDiscovery
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Privacy & Halal Safety Features
+            // Privacy & Halal Safety Toggles
             Text(
-                text = if (isArabic) "الخصوصية والضوابط الشرعية 🛡️" else "Privacy & Halal Guardian 🛡️",
-                fontSize = 17.sp,
+                text = if (isArabic) "الخصوصية السريعة والولي 🛡️" else "Quick Privacy & Wali 🛡️",
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = PetroleumGreen,
                 modifier = Modifier.padding(horizontal = 20.dp)
@@ -353,7 +427,7 @@ fun MyProfileScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Feature 1: Blur photos toggle
+                    // Photo blur toggle
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -361,12 +435,7 @@ fun MyProfileScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Lock,
-                                    contentDescription = null,
-                                    tint = PetroleumGreen,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                                Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = PetroleumGreen, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = if (isArabic) "إخفاء صوري (صور خاصة)" else "Blur My Photos",
@@ -375,10 +444,7 @@ fun MyProfileScreen(
                                 )
                             }
                             Text(
-                                text = if (isArabic)
-                                    "تبقى صورك مشفرة وتظهر فقط لمن توافق عليهم"
-                                else
-                                    "Keeps photos blurred until mutual permission",
+                                text = if (isArabic) "تبقى صورك مموهة للعامة" else "Keeps photos blurred to public",
                                 fontSize = 11.sp,
                                 color = Color.Gray,
                                 modifier = Modifier.padding(top = 2.dp)
@@ -395,12 +461,9 @@ fun MyProfileScreen(
                         )
                     }
 
-                    Divider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = Color.LightGray.copy(alpha = 0.3f)
-                    )
+                    Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color.LightGray.copy(alpha = 0.3f))
 
-                    // Feature 2: Chaperone toggle
+                    // Chaperone toggle
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -408,24 +471,16 @@ fun MyProfileScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Shield,
-                                    contentDescription = null,
-                                    tint = PetroleumGreen,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                                Icon(imageVector = Icons.Default.Shield, contentDescription = null, tint = PetroleumGreen, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (isArabic) "ميزة الولي / المرافق الشرعي" else "Chaperone / Wali Guardian",
+                                    text = if (isArabic) "إشراف الولي الشرعي (Wali)" else "Chaperone / Wali Active",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                             Text(
-                                text = if (isArabic)
-                                    "نسخة تلقائية للمحادثات ترسل إلى: ${user.chaperoneEmail}"
-                                else
-                                    "Transcripts forwarded to: ${user.chaperoneEmail}",
+                                text = if (isArabic) "مشاركة نسخة المحادثات مع: ${user.chaperoneEmail}" else "Forwarding to: ${user.chaperoneEmail}",
                                 fontSize = 11.sp,
                                 color = Color.Gray,
                                 modifier = Modifier.padding(top = 2.dp)
@@ -444,36 +499,126 @@ fun MyProfileScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Settings: Reset Discovery
-            Card(
+            // Logout Button
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(horizontal = 20.dp)
             ) {
-                Row(
+                OutlinedButton(
+                    onClick = { showLogoutDialog = true },
                     modifier = Modifier
+                        .testTag("logout_button")
                         .fillMaxWidth()
-                        .clickable { onResetDiscovery() }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .height(48.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFD32F2F))
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = PetroleumGreen)
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = if (isArabic) "إعادة تصفح جميع المرشحين" else "Reset Swiped Candidates",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                    Icon(imageVector = Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = Color(0xFFD32F2F))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (isArabic) "تسجيل الخروج من الحساب" else "Log Out",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
                 }
             }
         }
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = {
+                Text(
+                    text = if (isArabic) "تسجيل الخروج؟" else "Log Out?",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp
+                )
+            },
+            text = {
+                Text(
+                    text = if (isArabic)
+                        "هل ترغب بالفعل في تسجيل الخروج من تطبيق سوا سوا؟"
+                    else
+                        "Are you sure you want to log out of Sawa Sawa?",
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogout()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                ) {
+                    Text(if (isArabic) "نعم، خروج" else "Yes, Log Out")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text(if (isArabic) "إلغاء" else "Cancel", color = Color.Gray)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun ProfileMenuRow(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(PetroleumGreenContainer, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = PetroleumGreenDark,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    color = Color.Gray
+                )
+            }
+        }
+
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+            contentDescription = null,
+            tint = Color.Gray,
+            modifier = Modifier.size(14.dp)
+        )
     }
 }

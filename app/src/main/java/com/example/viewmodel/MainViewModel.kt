@@ -24,6 +24,10 @@ sealed class ScreenState {
     object Filters : ScreenState()
     object GoldCenter : ScreenState()
     object SelfieVerification : ScreenState()
+    object EditProfile : ScreenState()
+    object Subscriptions : ScreenState()
+    object PrivacyPolicy : ScreenState()
+    object AdminDashboard : ScreenState()
     data class CandidateDetail(val candidate: CandidateProfile) : ScreenState()
     data class MatchCelebration(val candidate: CandidateProfile) : ScreenState()
     data class ChatDetail(val candidate: CandidateProfile) : ScreenState()
@@ -48,7 +52,8 @@ data class UiState(
     val boostsRemaining: Int = 3,
     val instantChatsRemaining: Int = 12,
     val activeAudioId: Long? = null,
-    val isAudioPlaying: Boolean = false
+    val isAudioPlaying: Boolean = false,
+    val adminBroadcastSentToast: String? = null
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -99,6 +104,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun applyFilters(list: List<CandidateProfile>, filters: FilterPreferences): List<CandidateProfile> {
         return list.filter { candidate ->
+            if (candidate.isBanned) return@filter false
             val ageMatches = candidate.age in filters.minAge..filters.maxAge
             val practiceMatches = filters.religiousPractice == "الكل" || filters.religiousPractice == "All" ||
                     candidate.religiousPractice.contains(filters.religiousPractice) ||
@@ -113,6 +119,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun completeOnboarding() {
         _uiState.update { it.copy(currentScreen = ScreenState.Main) }
+    }
+
+    fun logout() {
+        _uiState.update { it.copy(currentScreen = ScreenState.Onboarding) }
+    }
+
+    fun deleteAccount() {
+        viewModelScope.launch {
+            candidateDao.resetAllDiscovery()
+            _uiState.update {
+                it.copy(
+                    currentUser = CurrentUserProfile(),
+                    currentScreen = ScreenState.Onboarding
+                )
+            }
+        }
     }
 
     fun switchTab(tab: MainNavigationTab) {
@@ -140,6 +162,60 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun closeGoldCenter() {
         _uiState.update { it.copy(currentScreen = ScreenState.Main) }
+    }
+
+    fun openSubscriptions() {
+        _uiState.update { it.copy(currentScreen = ScreenState.Subscriptions) }
+    }
+
+    fun closeSubscriptions() {
+        _uiState.update { it.copy(currentScreen = ScreenState.Main) }
+    }
+
+    fun openEditProfile() {
+        _uiState.update { it.copy(currentScreen = ScreenState.EditProfile) }
+    }
+
+    fun closeEditProfile() {
+        _uiState.update { it.copy(currentScreen = ScreenState.Main) }
+    }
+
+    fun updateUserProfile(updated: CurrentUserProfile) {
+        _uiState.update {
+            it.copy(
+                currentUser = updated,
+                currentScreen = ScreenState.Main
+            )
+        }
+    }
+
+    fun openPrivacyPolicy() {
+        _uiState.update { it.copy(currentScreen = ScreenState.PrivacyPolicy) }
+    }
+
+    fun closePrivacyPolicy() {
+        _uiState.update { it.copy(currentScreen = ScreenState.Main) }
+    }
+
+    fun openAdminDashboard() {
+        _uiState.update { it.copy(currentScreen = ScreenState.AdminDashboard) }
+    }
+
+    fun closeAdminDashboard() {
+        _uiState.update { it.copy(currentScreen = ScreenState.Main) }
+    }
+
+    fun purchasePlan(planId: String, price: String) {
+        _uiState.update {
+            val updatedUser = it.currentUser.copy(
+                isGoldMember = true,
+                subscriptionPlan = planId,
+                subscriptionPrice = price,
+                boostsRemaining = it.currentUser.boostsRemaining + 3,
+                instantChatsRemaining = it.currentUser.instantChatsRemaining + 12
+            )
+            it.copy(currentUser = updatedUser)
+        }
     }
 
     fun openSelfieVerification() {
@@ -287,6 +363,51 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Admin Operations
+    fun adminToggleVerify(candidateId: String) {
+        viewModelScope.launch {
+            val cand = candidateDao.getCandidateById(candidateId) ?: return@launch
+            val updated = cand.copy(isVerified = !cand.isVerified)
+            candidateDao.update(updated)
+        }
+    }
+
+    fun adminToggleGold(candidateId: String) {
+        viewModelScope.launch {
+            val cand = candidateDao.getCandidateById(candidateId) ?: return@launch
+            val updated = cand.copy(isGoldMember = !cand.isGoldMember)
+            candidateDao.update(updated)
+        }
+    }
+
+    fun adminToggleBan(candidateId: String) {
+        viewModelScope.launch {
+            val cand = candidateDao.getCandidateById(candidateId) ?: return@launch
+            val updated = cand.copy(isBanned = !cand.isBanned)
+            candidateDao.update(updated)
+        }
+    }
+
+    fun adminToggleBlur(candidateId: String) {
+        viewModelScope.launch {
+            val cand = candidateDao.getCandidateById(candidateId) ?: return@launch
+            val updated = cand.copy(isPhotoBlurred = !cand.isPhotoBlurred)
+            candidateDao.update(updated)
+        }
+    }
+
+    fun adminAddCandidate(candidate: CandidateProfile) {
+        viewModelScope.launch {
+            candidateDao.insertAll(listOf(candidate))
+        }
+    }
+
+    fun adminSendBroadcast(title: String, message: String) {
+        _uiState.update {
+            it.copy(adminBroadcastSentToast = title)
+        }
+    }
+
     fun resetDiscovery() {
         viewModelScope.launch {
             candidateDao.resetAllDiscovery()
@@ -345,7 +466,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
             )
 
-            // Respectful automated reply simulating real halal conversation
             kotlinx.coroutines.delay(1200)
             val replyText = if (_uiState.value.language == AppLanguage.ARABIC) {
                 "شكراً لرسالتك المهذبة. بارك الله فيك، أسعد بالتواصل بما يرضي الله."
@@ -377,6 +497,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             is ScreenState.CandidateDetail,
             is ScreenState.Filters,
             is ScreenState.GoldCenter,
+            is ScreenState.Subscriptions,
+            is ScreenState.EditProfile,
+            is ScreenState.PrivacyPolicy,
+            is ScreenState.AdminDashboard,
             is ScreenState.SelfieVerification,
             is ScreenState.MatchCelebration,
             is ScreenState.ChaperoneNotice -> {

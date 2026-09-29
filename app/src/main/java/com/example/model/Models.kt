@@ -47,7 +47,9 @@ data class CandidateProfile(
     val isGoldMember: Boolean = true,
     val audioDurationSec: Int = 37,
     val languages: String = "العربية, الإنجليزية, الفرنسية",
-    val photoRevealRequested: Boolean = false
+    val photoRevealRequested: Boolean = false,
+    val gender: String = "MALE", // "MALE" or "FEMALE"
+    val isBanned: Boolean = false
 )
 
 @Entity(tableName = "chat_messages")
@@ -79,15 +81,59 @@ data class CurrentUserProfile(
     val age: Int = 24,
     val city: String = "الرياض",
     val profession: String = "طبيبة أطفال",
+    val gender: String = "FEMALE",
+    val bio: String = "طبيبة أطفال، أبحث عن شريك حياة يخاف الله، طموح، يقدر الأسرة والتفاهم والود. أحب القراءة وزيارة الأماكن التراثية.",
+    val marriageGoal: String = "بناء بيت إسلامي سعيد قائم على المودة والرحمة وتربية أطفال صالحين.",
+    val religiousPractice: String = "ملتزمة بالفرائض",
+    val islamicDress: String = "حجاب محتشم",
+    val prayersHabit: String = "أصلي الصلوات الخمس في وقتها",
+    val halalFood: String = "حلال دائماً",
+    val education: String = "ماجستير طب الأطفال",
+    val heightCm: Int = 166,
     val chaperoneName: String = "أبو سارة (الولي)",
     val chaperoneEmail: String = "wali.guardian@example.com",
+    val chaperonePhone: String = "+966 50 123 4567",
     val isChaperoneActive: Boolean = true,
     val isPhotoBlurred: Boolean = false,
-    val completionPercentage: Int = 94,
+    val completionPercentage: Int = 96,
     val isVerified: Boolean = true,
     val isGoldMember: Boolean = true,
+    val subscriptionPlan: String = "GOLD_MONTHLY",
+    val subscriptionPrice: String = "99.99 ر.س / شهرياً",
+    val subscriptionExpiresAt: String = "30 أكتوبر 2026",
     val boostsRemaining: Int = 3,
     val instantChatsRemaining: Int = 12
+)
+
+data class SubscriptionPlan(
+    val id: String,
+    val title: String,
+    val titleEn: String,
+    val period: String,
+    val periodEn: String,
+    val price: String,
+    val originalPrice: String? = null,
+    val discountPercent: String? = null,
+    val isPopular: Boolean = false,
+    val badge: String? = null
+)
+
+data class AdminReport(
+    val id: String,
+    val reporterName: String,
+    val reportedUserId: String,
+    val reportedUserName: String,
+    val reason: String,
+    val timestamp: String,
+    val status: String = "PENDING" // "PENDING", "RESOLVED", "DISMISSED"
+)
+
+data class AdminBroadcast(
+    val id: String,
+    val title: String,
+    val message: String,
+    val sentAt: String,
+    val audience: String
 )
 
 enum class AppLanguage {
