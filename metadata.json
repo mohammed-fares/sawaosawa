@@ -1,0 +1,6 @@
+{
+  "name": "سوا سوا",
+  "description": "تطبيق الزواج الإسلامي سوا سوا - Muzz سابقاً - حيث يلتقي المسلمون للزواج الحلال مع ميزات الخصوصية وفلاتر الالتزام والولي",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
