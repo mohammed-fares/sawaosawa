@@ -67,7 +67,6 @@ fun DiscoveryScreen(
     onFilterClick: () -> Unit,
     onBoostClick: () -> Unit,
     onGoldClick: () -> Unit,
-    onLanguageClick: () -> Unit,
     onCardClick: (CandidateProfile) -> Unit,
     onToggleBlur: (CandidateProfile) -> Unit,
     onPass: () -> Unit,
@@ -108,7 +107,6 @@ fun DiscoveryScreen(
             onFilterClick = onFilterClick,
             onBoostClick = onBoostClick,
             onGoldClick = onGoldClick,
-            onLanguageClick = onLanguageClick,
             boostActive = boostActive,
             boostsCount = boostsCount
         )

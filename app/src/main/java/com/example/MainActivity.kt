@@ -25,6 +25,7 @@ import com.example.model.AppLanguage
 import com.example.model.MainNavigationTab
 import com.example.ui.components.SawaBottomNavBar
 import com.example.ui.screens.AdminDashboardScreen
+import com.example.ui.screens.AuthScreen
 import com.example.ui.screens.CandidateDetailScreen
 import com.example.ui.screens.ChatDetailScreen
 import com.example.ui.screens.ChaperoneNoticeDialog
@@ -77,8 +78,23 @@ class MainActivity : ComponentActivity() {
                         is ScreenState.Onboarding -> {
                             OnboardingScreen(
                                 language = uiState.language,
-                                onContinue = { viewModel.completeOnboarding() },
+                                onContinue = { viewModel.openAuth() },
                                 onToggleLanguage = { viewModel.toggleLanguage() }
+                            )
+                        }
+
+                        is ScreenState.Auth -> {
+                            AuthScreen(
+                                language = uiState.language,
+                                onAuthSuccess = { name, phoneOrEmail, activeHours ->
+                                    viewModel.onAuthSuccess(name, phoneOrEmail, activeHours)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            if (isArabic) "مرحباً $name! تم التحقق والدخول بنجاح عبر Firebase" else "Welcome $name! Signed in via Firebase"
+                                        )
+                                    }
+                                },
+                                onBack = { viewModel.navigateBack() }
                             )
                         }
 
@@ -304,7 +320,6 @@ class MainActivity : ComponentActivity() {
                                             onFilterClick = { viewModel.openFilters() },
                                             onBoostClick = { viewModel.activateBoost() },
                                             onGoldClick = { viewModel.openGoldCenter() },
-                                            onLanguageClick = { viewModel.toggleLanguage() },
                                             onCardClick = { candidate -> viewModel.openCandidateDetail(candidate) },
                                             onToggleBlur = { candidate -> viewModel.toggleBlur(candidate) },
                                             onPass = { viewModel.passCurrentCandidate() },
@@ -319,16 +334,12 @@ class MainActivity : ComponentActivity() {
                                         CommunityScreen(
                                             candidates = uiState.candidates,
                                             language = uiState.language,
+                                            userLatitude = uiState.userLatitude,
+                                            userLongitude = uiState.userLongitude,
+                                            isGpsActive = uiState.isGpsActive,
                                             onCandidateClick = { candidate -> viewModel.openCandidateDetail(candidate) },
-                                            onJoinSpeedDating = {
-                                                scope.launch {
-                                                    snackbarHostState.showSnackbar(
-                                                        if (isArabic)
-                                                            "تم تسجيلك في جلسة التعارف السريع القادمة! ستصلك رسالة تذكير."
-                                                        else
-                                                            "Registered for the next Halal Speed Dating session!"
-                                                    )
-                                                }
+                                            onLocationUpdated = { lat, lon, note ->
+                                                viewModel.updateUserLocation(lat, lon, note)
                                             },
                                             modifier = Modifier.padding(innerPadding)
                                         )
@@ -357,6 +368,9 @@ class MainActivity : ComponentActivity() {
                                             onTogglePhotoBlur = { viewModel.toggleUserPhotoBlur() },
                                             onToggleChaperone = { viewModel.toggleChaperone() },
                                             onToggleLanguage = { viewModel.toggleLanguage() },
+                                            onUpdatePresence = { activeHours, isOnline ->
+                                                viewModel.updateUserPresence(activeHours, isOnline)
+                                            },
                                             onResetDiscovery = {
                                                 viewModel.resetDiscovery()
                                                 scope.launch {

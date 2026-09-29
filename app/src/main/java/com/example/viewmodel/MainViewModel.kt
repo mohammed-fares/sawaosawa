@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 
 sealed class ScreenState {
     object Onboarding : ScreenState()
+    object Auth : ScreenState()
     object Main : ScreenState()
     object Filters : ScreenState()
     object GoldCenter : ScreenState()
@@ -53,7 +54,11 @@ data class UiState(
     val instantChatsRemaining: Int = 12,
     val activeAudioId: Long? = null,
     val isAudioPlaying: Boolean = false,
-    val adminBroadcastSentToast: String? = null
+    val adminBroadcastSentToast: String? = null,
+    val userLatitude: Double = 30.0444, // Default Cairo
+    val userLongitude: Double = 31.2357,
+    val isGpsActive: Boolean = false,
+    val locationStatusText: String = "القاهرة، مصر"
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -121,7 +126,56 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(currentScreen = ScreenState.Main) }
     }
 
+    fun openAuth() {
+        _uiState.update { it.copy(currentScreen = ScreenState.Auth) }
+    }
+
+    fun onAuthSuccess(name: String, phoneOrEmail: String, activeHours: String) {
+        _uiState.update { state ->
+            val updatedUser = state.currentUser.copy(
+                name = if (name.isNotBlank()) name else state.currentUser.name,
+                phoneNumber = if (phoneOrEmail.startsWith("+") || phoneOrEmail.any { ch -> ch.isDigit() }) phoneOrEmail else state.currentUser.phoneNumber,
+                email = if (phoneOrEmail.contains("@")) phoneOrEmail else state.currentUser.email,
+                activeHours = if (activeHours.isNotBlank()) activeHours else state.currentUser.activeHours,
+                isRegisteredWithFirebase = true
+            )
+            state.copy(
+                currentUser = updatedUser,
+                currentScreen = ScreenState.Main
+            )
+        }
+    }
+
+    fun updateUserLocation(lat: Double, lon: Double, note: String) {
+        _uiState.update { state ->
+            val updatedUser = state.currentUser.copy(
+                latitude = lat,
+                longitude = lon,
+                locationCity = note,
+                isGpsEnabled = true
+            )
+            state.copy(
+                userLatitude = lat,
+                userLongitude = lon,
+                isGpsActive = true,
+                locationStatusText = note,
+                currentUser = updatedUser
+            )
+        }
+    }
+
+    fun updateUserPresence(activeHours: String, isOnline: Boolean) {
+        _uiState.update { state ->
+            val updatedUser = state.currentUser.copy(
+                activeHours = activeHours,
+                isOnlineNow = isOnline
+            )
+            state.copy(currentUser = updatedUser)
+        }
+    }
+
     fun logout() {
+        com.example.data.AuthService.signOut()
         _uiState.update { it.copy(currentScreen = ScreenState.Onboarding) }
     }
 
@@ -505,6 +559,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             is ScreenState.MatchCelebration,
             is ScreenState.ChaperoneNotice -> {
                 _uiState.update { it.copy(currentScreen = ScreenState.Main) }
+            }
+            is ScreenState.Auth -> {
+                _uiState.update { it.copy(currentScreen = ScreenState.Onboarding) }
             }
             is ScreenState.VideoCall -> {
                 endVideoCall()

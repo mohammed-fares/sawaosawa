@@ -31,7 +31,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Stars
@@ -42,6 +44,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -91,6 +96,7 @@ fun MyProfileScreen(
     onTogglePhotoBlur: () -> Unit,
     onToggleChaperone: () -> Unit,
     onToggleLanguage: () -> Unit,
+    onUpdatePresence: (activeHours: String, isOnline: Boolean) -> Unit,
     onResetDiscovery: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
@@ -136,23 +142,6 @@ fun MyProfileScreen(
                             imageVector = Icons.Default.AdminPanelSettings,
                             contentDescription = "Admin",
                             tint = RadiantGold,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Language toggle
-                    IconButton(
-                        onClick = onToggleLanguage,
-                        modifier = Modifier
-                            .size(38.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Language,
-                            contentDescription = "Language",
-                            tint = PetroleumGreen,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -494,6 +483,242 @@ fun MyProfileScreen(
                                 checkedThumbColor = Color.White,
                                 checkedTrackColor = PetroleumGreen
                             )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Section 1: App Presence & Available Hours (أوقات التواجد على التطبيق)
+            Text(
+                text = if (isArabic) "أوقات التواجد على التطبيق 🕒" else "App Presence & Available Hours 🕒",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = PetroleumGreen,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Online presence toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .background(if (user.isOnlineNow) Color(0xFF4CAF50) else Color.Gray, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (user.isOnlineNow) {
+                                        if (isArabic) "متواجدة حالياً (Online)" else "Currently Online"
+                                    } else {
+                                        if (isArabic) "غير متصلة حالياً" else "Offline"
+                                    },
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Text(
+                                text = if (isArabic) "إظهار النقطة الخضراء للآخرين أثناء تصفحك" else "Display green online badge to candidates",
+                                fontSize = 11.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+
+                        Switch(
+                            checked = user.isOnlineNow,
+                            onCheckedChange = { onUpdatePresence(user.activeHours, it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = PetroleumGreen
+                            )
+                        )
+                    }
+
+                    Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color.LightGray.copy(alpha = 0.3f))
+
+                    // Presence Hours schedule
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = RadiantGoldDark,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isArabic) "ساعات التواجد المعتادة:" else "Usual Active Hours:",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Text(
+                        text = user.activeHours,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PetroleumGreenDark,
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    )
+
+                    // Quick schedule selector chips
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(
+                            "طوال اليوم",
+                            "مساءً (7-11 م)",
+                            "عصراً (3-7 م)"
+                        ).forEach { preset ->
+                            val actualValue = when (preset) {
+                                "طوال اليوم" -> "طوال اليوم (متاحة دائماً)"
+                                "مساءً (7-11 م)" -> "مساءً (من 7:00 م إلى 11:00 م)"
+                                else -> "عصراً (من 3:00 م إلى 7:00 م)"
+                            }
+                            FilterChip(
+                                selected = user.activeHours.contains(preset),
+                                onClick = { onUpdatePresence(actualValue, user.isOnlineNow) },
+                                label = { Text(preset, fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = PetroleumGreen,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Section 2: Account Language Selection (خيارات المستخدم فى الحساب)
+            Text(
+                text = if (isArabic) "لغة التطبيق (خيارات الحساب) 🌐" else "App Language (Account Settings) 🌐",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = PetroleumGreen,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Arabic Language Option
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isArabic) PetroleumGreen else Color.White)
+                            .clickable {
+                                if (!isArabic) onToggleLanguage()
+                            }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🇸🇦", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "العربية",
+                                fontWeight = FontWeight.Bold,
+                                color = if (isArabic) Color.White else PetroleumGreenDark,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+
+                    // English Language Option
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (!isArabic) PetroleumGreen else Color.White)
+                            .clickable {
+                                if (isArabic) onToggleLanguage()
+                            }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🇬🇧", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "English",
+                                fontWeight = FontWeight.Bold,
+                                color = if (!isArabic) Color.White else PetroleumGreenDark,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Section 3: GPS Location & Proximity Information
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = RadiantGoldContainer.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.NearMe,
+                        contentDescription = null,
+                        tint = PetroleumGreenDark,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = if (isArabic) "الموقع الجغرافي: ${user.locationCity}" else "Location: ${user.locationCity}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = PetroleumGreenDark
+                        )
+                        Text(
+                            text = if (isArabic)
+                                "مُفعل عبر Google Play Services Location لحساب الأقرب إليك"
+                            else
+                                "Enabled via Google Play Services Location for proximity match",
+                            fontSize = 11.sp,
+                            color = Color.DarkGray
                         )
                     }
                 }

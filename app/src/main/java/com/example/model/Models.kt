@@ -49,7 +49,11 @@ data class CandidateProfile(
     val languages: String = "العربية, الإنجليزية, الفرنسية",
     val photoRevealRequested: Boolean = false,
     val gender: String = "MALE", // "MALE" or "FEMALE"
-    val isBanned: Boolean = false
+    val isBanned: Boolean = false,
+    val latitude: Double = 30.0444, // Default Cairo/Egypt or specific coordinates
+    val longitude: Double = 31.2357,
+    val activeHours: String = "مساءً (من 7:00 م إلى 11:00 م)",
+    val isOnlineNow: Boolean = true
 )
 
 @Entity(tableName = "chat_messages")
@@ -79,7 +83,7 @@ data class FilterPreferences(
 data class CurrentUserProfile(
     val name: String = "سارة",
     val age: Int = 24,
-    val city: String = "الرياض",
+    val city: String = "القاهرة",
     val profession: String = "طبيبة أطفال",
     val gender: String = "FEMALE",
     val bio: String = "طبيبة أطفال، أبحث عن شريك حياة يخاف الله، طموح، يقدر الأسرة والتفاهم والود. أحب القراءة وزيارة الأماكن التراثية.",
@@ -92,17 +96,28 @@ data class CurrentUserProfile(
     val heightCm: Int = 166,
     val chaperoneName: String = "أبو سارة (الولي)",
     val chaperoneEmail: String = "wali.guardian@example.com",
-    val chaperonePhone: String = "+966 50 123 4567",
+    val chaperonePhone: String = "+20 10 1234 5678",
     val isChaperoneActive: Boolean = true,
     val isPhotoBlurred: Boolean = false,
     val completionPercentage: Int = 96,
     val isVerified: Boolean = true,
     val isGoldMember: Boolean = true,
     val subscriptionPlan: String = "GOLD_MONTHLY",
-    val subscriptionPrice: String = "99.99 ر.س / شهرياً",
+    val subscriptionPrice: String = "199.99 ج.م / شهرياً",
     val subscriptionExpiresAt: String = "30 أكتوبر 2026",
     val boostsRemaining: Int = 3,
-    val instantChatsRemaining: Int = 12
+    val instantChatsRemaining: Int = 12,
+    val activeHours: String = "مساءً (من 7:00 م إلى 11:00 م)",
+    val isOnlineNow: Boolean = true,
+    val latitude: Double = 30.0444, // Cairo coordinates
+    val longitude: Double = 31.2357,
+    val locationCity: String = "القاهرة، مصر",
+    val isGpsEnabled: Boolean = false,
+    val preferredLanguage: AppLanguage = AppLanguage.ARABIC,
+    val phoneNumber: String = "+20 10 1234 5678",
+    val email: String = "sara.matrimony@example.com",
+    val isRegisteredWithFirebase: Boolean = false,
+    val firebaseUid: String? = null
 )
 
 data class SubscriptionPlan(

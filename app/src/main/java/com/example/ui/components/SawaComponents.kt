@@ -150,7 +150,6 @@ fun SawaTopBar(
     onFilterClick: () -> Unit,
     onBoostClick: () -> Unit,
     onGoldClick: () -> Unit,
-    onLanguageClick: () -> Unit,
     boostActive: Boolean = false,
     boostsCount: Int = 3,
     modifier: Modifier = Modifier
@@ -193,7 +192,7 @@ fun SawaTopBar(
                 Text(text = "👑", fontSize = 16.sp)
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
             // Boost Rocket pill: "3 🚀" (مطابقة لصورة 1.webp وصورة 6.webp)
             Row(
@@ -201,7 +200,7 @@ fun SawaTopBar(
                     .clip(RoundedCornerShape(18.dp))
                     .background(if (boostActive) RadiantGold else PetroleumGreen)
                     .clickable { onBoostClick() }
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -216,24 +215,6 @@ fun SawaTopBar(
                     contentDescription = "Boost",
                     tint = Color.White,
                     modifier = Modifier.size(15.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(6.dp))
-
-            // Language switch button
-            IconButton(
-                onClick = onLanguageClick,
-                modifier = Modifier
-                    .testTag("language_toggle_button")
-                    .size(34.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-            ) {
-                Text(
-                    text = if (isArabic) "EN" else "عربي",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PetroleumGreen
                 )
             }
         }
@@ -461,6 +442,29 @@ fun CandidateCard(
                             "${candidate.distanceKm} km, ${candidate.cityEn} 🇦🇪",
                         color = Color.White.copy(alpha = 0.85f),
                         fontSize = 13.sp
+                    )
+                }
+
+                // Presence / Active Hours Badge
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(if (candidate.isOnlineNow) Color(0xFF4CAF50) else Color.LightGray, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (candidate.isOnlineNow) {
+                            if (isArabic) "متصل الآن • تواجد: ${candidate.activeHours}" else "Online Now • ${candidate.activeHours}"
+                        } else {
+                            if (isArabic) "أوقات التواجد: ${candidate.activeHours}" else "Active Hours: ${candidate.activeHours}"
+                        },
+                        color = Color.White.copy(alpha = 0.95f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
 

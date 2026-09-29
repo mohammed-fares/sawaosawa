@@ -28,17 +28,23 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -94,6 +100,10 @@ fun EditProfileScreen(
     var chaperoneEmail by remember { mutableStateOf(user.chaperoneEmail) }
     var chaperonePhone by remember { mutableStateOf(user.chaperonePhone) }
 
+    // App Presence & Availability Hours
+    var activeHours by remember { mutableStateOf(user.activeHours) }
+    var isOnlineNow by remember { mutableStateOf(user.isOnlineNow) }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -146,7 +156,9 @@ fun EditProfileScreen(
                             halalFood = halalFood,
                             chaperoneName = chaperoneName.trim(),
                             chaperoneEmail = chaperoneEmail.trim(),
-                            chaperonePhone = chaperonePhone.trim()
+                            chaperonePhone = chaperonePhone.trim(),
+                            activeHours = activeHours.trim(),
+                            isOnlineNow = isOnlineNow
                         )
                         onSave(updated)
                     },
@@ -395,6 +407,128 @@ fun EditProfileScreen(
                             value = chaperonePhone,
                             onValueChange = { chaperonePhone = it },
                             label = { Text(if (isArabic) "رقم هاتف الولي" else "Guardian Phone") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
+                        )
+                    }
+                }
+
+                // Presence Hours Card (أوقات التواجد على التطبيق)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = RadiantGoldContainer.copy(alpha = 0.4f))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = PetroleumGreenDark,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (isArabic) "أوقات التواجد على التطبيق 🕒" else "App Presence & Available Hours 🕒",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PetroleumGreenDark
+                            )
+                        }
+
+                        Text(
+                            text = if (isArabic)
+                                "حدد الساعات التي تفضل فيها استقبال المحادثات بجدية والتواجد على التطبيق"
+                            else
+                                "Choose the hours you are active for serious matrimonial communication",
+                            fontSize = 12.sp,
+                            color = Color.DarkGray,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 10.dp)
+                        )
+
+                        // Online visibility toggle
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White)
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .background(if (isOnlineNow) Color(0xFF4CAF50) else Color.Gray, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isArabic) "إظهار حالتي كمتصل الآن للآخرين" else "Show Online Status",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            Switch(
+                                checked = isOnlineNow,
+                                onCheckedChange = { isOnlineNow = it },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = PetroleumGreen
+                                )
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Presence presets
+                        Text(
+                            text = if (isArabic) "خيارات التواجد الشائعة:" else "Quick Presence Presets:",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PetroleumGreenDark,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            listOf(
+                                "طوال اليوم",
+                                "مساءً (7-11 م)",
+                                "عصراً (3-7 م)"
+                            ).forEach { preset ->
+                                FilterChip(
+                                    selected = activeHours.contains(preset),
+                                    onClick = {
+                                        activeHours = when (preset) {
+                                            "طوال اليوم" -> "طوال اليوم (متاحة دائماً)"
+                                            "مساءً (7-11 م)" -> "مساءً (من 7:00 م إلى 11:00 م)"
+                                            "عصراً (3-7 م)" -> "عصراً (من 3:00 م إلى 7:00 م)"
+                                            else -> preset
+                                        }
+                                    },
+                                    label = { Text(preset, fontSize = 11.sp) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = PetroleumGreen,
+                                        selectedLabelColor = Color.White
+                                    )
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Custom active hours text field
+                        OutlinedTextField(
+                            value = activeHours,
+                            onValueChange = { activeHours = it },
+                            label = { Text(if (isArabic) "تخصيص وقت التواجد" else "Custom Active Hours") },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
