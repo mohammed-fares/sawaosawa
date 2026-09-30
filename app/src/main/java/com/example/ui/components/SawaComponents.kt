@@ -323,7 +323,7 @@ fun CandidateCard(
                 }
             }
 
-            // Dark gradient overlay at bottom
+            // Light, subtle gradient overlay at the very bottom so the photo remains clear and visible
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -331,84 +331,104 @@ fun CandidateCard(
                         Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                Color.Black.copy(alpha = 0.25f),
-                                Color.Black.copy(alpha = 0.90f)
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.35f),
+                                Color.Black.copy(alpha = 0.85f)
                             ),
-                            startY = 350f
+                            startY = 480f
                         )
                     )
             )
 
-            // Top Badges
+            // Top Overlay: VIP Badge, Verified, Roses & Blur lock
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Verified Badge
-                if (candidate.isVerified) {
-                    Row(
-                        modifier = Modifier
-                            .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(20.dp))
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Verified,
-                            contentDescription = null,
-                            tint = RadiantGold,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (isArabic) "موثّق" else "Verified",
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                // Top Start: VIP Badge & Verified
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (candidate.isVip) {
+                        VipBadgeOverlay()
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+
+                    if (candidate.isVerified) {
+                        Row(
+                            modifier = Modifier
+                                .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Verified,
+                                contentDescription = null,
+                                tint = RadiantGold,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = if (isArabic) "موثّق" else "Verified",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
-                // Blur toggle
-                IconButton(
-                    onClick = onToggleBlur,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = if (candidate.isPhotoBlurred) Icons.Default.Lock else Icons.Default.LockOpen,
-                        contentDescription = "Toggle blur",
-                        tint = Color.White,
-                        modifier = Modifier.size(18.dp)
-                    )
+                // Top End: Rose counter & Privacy lock
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (candidate.rosesReceivedCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color(0xFF880E4F).copy(alpha = 0.75f))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "🌹 ${candidate.rosesReceivedCount}",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+
+                    IconButton(
+                        onClick = onToggleBlur,
+                        modifier = Modifier
+                            .size(34.dp)
+                            .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = if (candidate.isPhotoBlurred) Icons.Default.Lock else Icons.Default.LockOpen,
+                            contentDescription = "Toggle blur",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
 
-            // Bottom Profile Info
+            // Bottom Profile Info - Clean & Uncluttered so the photo shines
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 18.dp)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                // Name & Age & Flag (مطابقة لصورة 1.webp و 5.webp)
+                // Name & Age
                 Row(
-                    verticalAlignment = Alignment.Bottom,
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Start
                 ) {
                     Text(
-                        text = "${candidate.age}",
+                        text = if (isArabic) "${candidate.name}، ${candidate.age}" else "${candidate.nameEn}, ${candidate.age}",
                         fontSize = 24.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = if (isArabic) candidate.name else candidate.nameEn,
-                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
@@ -418,138 +438,26 @@ fun CandidateCard(
                             imageVector = Icons.Default.Verified,
                             contentDescription = null,
                             tint = RadiantGold,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                // Location & Distance
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 3.dp, bottom = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = RadiantGold,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (isArabic)
-                            "${candidate.distanceKm} كيلومتر، ${candidate.city} 🇦🇪"
-                        else
-                            "${candidate.distanceKm} km, ${candidate.cityEn} 🇦🇪",
-                        color = Color.White.copy(alpha = 0.85f),
-                        fontSize = 13.sp
-                    )
-                }
-
-                // Presence / Active Hours Badge
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 6.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .background(if (candidate.isOnlineNow) Color(0xFF4CAF50) else Color.LightGray, CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = if (candidate.isOnlineNow) {
-                            if (isArabic) "متصل الآن • تواجد: ${candidate.activeHours}" else "Online Now • ${candidate.activeHours}"
-                        } else {
-                            if (isArabic) "أوقات التواجد: ${candidate.activeHours}" else "Active Hours: ${candidate.activeHours}"
-                        },
-                        color = Color.White.copy(alpha = 0.95f),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                // Badges Row: "ذهبي Gold 👑", "طبيب", "ملتزم دينياً 🌙"
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    // Gold Member Badge (شعار ذهبي Gold 👑)
-                    if (candidate.isGoldMember) {
-                        ProfileBadge(
-                            text = if (isArabic) "ذهبي Gold 👑" else "Gold Member 👑",
-                            backgroundColor = RadiantGold,
-                            textColor = Color(0xFF261D05)
-                        )
-                    }
-
-                    ProfileBadge(
-                        text = if (isArabic) candidate.profession else candidate.professionEn,
-                        icon = Icons.Default.Work,
-                        backgroundColor = Color.Black.copy(alpha = 0.6f),
-                        textColor = Color.White
-                    )
-
-                    ProfileBadge(
-                        text = if (isArabic) candidate.religiousPractice else candidate.religiousPracticeEn,
-                        backgroundColor = PetroleumGreen.copy(alpha = 0.85f),
-                        textColor = Color.White
-                    )
-
-                    if (candidate.isPhotoBlurred) {
-                        ProfileBadge(
-                            text = if (isArabic) "صور خاصة 🔒" else "Private Photos 🔒",
-                            backgroundColor = Color(0xFF880E4F).copy(alpha = 0.7f),
-                            textColor = Color.White
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Profile Audio Prompt (مطابقة لصورة 4.webp: "Adnan يقول" مع موجة صوتية)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White.copy(alpha = 0.15f))
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(30.dp)
-                            .background(Color.White, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = "Play voice note",
-                            tint = PetroleumGreenDark,
                             modifier = Modifier.size(18.dp)
                         )
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = if (isArabic)
-                            "${candidate.name} يقول عن أهدافه (00:${candidate.audioDurationSec})"
-                        else
-                            "${candidate.nameEn} says about marriage (00:${candidate.audioDurationSec})",
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    Text(
-                        text = " ılılıllı ",
-                        color = RadiantGold,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(if (candidate.isOnlineNow) Color(0xFF4CAF50) else Color.LightGray, CircleShape)
                     )
                 }
+
+                // Single Clean Subtitle line: City & Profession
+                Text(
+                    text = "📍 ${if (isArabic) candidate.city else candidate.cityEn} • ${if (isArabic) candidate.profession else candidate.professionEn}",
+                    color = Color.White.copy(alpha = 0.90f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
             }
         }
     }
@@ -595,8 +503,37 @@ fun ProfileBadge(
 }
 
 @Composable
+fun VipBadgeOverlay(
+    modifier: Modifier = Modifier,
+    text: String = "VIP 👑"
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                brush = Brush.horizontalGradient(
+                    listOf(Color(0xFFE5A93B), Color(0xFFFFD54F), Color(0xFFC48B28))
+                )
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.85f), RoundedCornerShape(12.dp))
+            .shadow(4.dp, RoundedCornerShape(12.dp))
+            .padding(horizontal = 7.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            fontWeight = FontWeight.Black,
+            fontSize = 10.sp,
+            color = Color(0xFF261D05),
+            letterSpacing = 0.5.sp
+        )
+    }
+}
+
+@Composable
 fun SwipeActionButtons(
     onPass: () -> Unit,
+    onSendRose: () -> Unit = {},
     onInstantChat: () -> Unit,
     onLike: () -> Unit,
     modifier: Modifier = Modifier
@@ -604,28 +541,44 @@ fun SwipeActionButtons(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Pass Button (X in gray/petroleum)
+        // 1. Pass / Dismiss Button
         IconButton(
             onClick = onPass,
             modifier = Modifier
                 .testTag("pass_button")
-                .size(54.dp)
-                .background(Color(0xFF263238), CircleShape)
+                .size(50.dp)
+                .background(Color(0xFF37474F), CircleShape)
                 .shadow(4.dp, CircleShape)
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Pass",
                 tint = Color.White,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
 
-        // Instant Chat Button (Purple / Instant Icebreaker)
+        // 2. Virtual Rose 🌹 Button (إرسال باقة ورد VIP)
+        IconButton(
+            onClick = onSendRose,
+            modifier = Modifier
+                .testTag("rose_button")
+                .size(56.dp)
+                .background(
+                    brush = Brush.radialGradient(listOf(Color(0xFFE91E63), Color(0xFF880E4F))),
+                    shape = CircleShape
+                )
+                .border(2.dp, RadiantGold, CircleShape)
+                .shadow(6.dp, CircleShape)
+        ) {
+            Text(text = "🌹", fontSize = 24.sp)
+        }
+
+        // 3. Instant Chat Button
         IconButton(
             onClick = onInstantChat,
             modifier = Modifier
@@ -642,12 +595,12 @@ fun SwipeActionButtons(
             )
         }
 
-        // Like Button (Heart Pink / Radiant Gold border)
+        // 4. Like / Match Button
         IconButton(
             onClick = onLike,
             modifier = Modifier
                 .testTag("like_button")
-                .size(62.dp)
+                .size(58.dp)
                 .background(MuzzPink, CircleShape)
                 .border(2.dp, RadiantGold, CircleShape)
                 .shadow(6.dp, CircleShape)
@@ -656,7 +609,7 @@ fun SwipeActionButtons(
                 imageVector = Icons.Default.Favorite,
                 contentDescription = "Like",
                 tint = Color.White,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(28.dp)
             )
         }
     }
@@ -811,6 +764,52 @@ fun ChaperoneBadgeBanner(
                 fontSize = 10.sp,
                 color = PetroleumGreenDark.copy(alpha = 0.8f)
             )
+        }
+    }
+}
+
+@Composable
+fun RoseShowerOverlay(
+    visible: Boolean,
+    onFinished: () -> Unit
+) {
+    if (!visible) return
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(2600)
+        onFinished()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.45f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(24.dp)
+        ) {
+            Text(text = "🌹 🌹 🌹", fontSize = 42.sp)
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "تم إرسال باقة ورد VIP بنجاح!",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Text(
+                text = "لمسة راقية تنثر باقة الورود على شاشة الطرف الآخر ✨",
+                fontSize = 13.sp,
+                color = RadiantGold,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(text = "🌸", fontSize = 28.sp)
+                Text(text = "🌹", fontSize = 36.sp)
+                Text(text = "💐", fontSize = 28.sp)
+            }
         }
     }
 }

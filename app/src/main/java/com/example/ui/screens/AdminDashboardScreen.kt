@@ -58,11 +58,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.CurrencyExchange
+import com.example.util.NotificationHelper
+import com.example.ui.components.SawaSawaLogoBadge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -79,6 +86,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -110,8 +118,17 @@ fun AdminDashboardScreen(
     modifier: Modifier = Modifier
 ) {
     val isArabic = language == AppLanguage.ARABIC
+    val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedGenderFilter by remember { mutableStateOf("ALL") }
+
+    // Customization & Settings State
+    var selectedCurrency by remember { mutableStateOf("EGP") } // EGP, USD, SAR, AED
+    var isDiscreetNotificationsEnabled by remember { mutableStateOf(true) }
+    var selectedLogoStyle by remember { mutableStateOf("COMBINED") } // "TYPOGRAPHY", "EMBLEM", "COMBINED"
+    var selectedColorPalette by remember { mutableStateOf("PETROLEUM_GOLD") } // "PETROLEUM_GOLD", "ROYAL_NAVY", "ISLAMIC_EMERALD", "DESERT_ROSE"
+    var rosesThresholdForRenewal by remember { mutableIntStateOf(50) }
+    var notificationTestSentToast by remember { mutableStateOf(false) }
 
     // Dialogs
     var showAddMemberDialog by remember { mutableStateOf(false) }
@@ -208,9 +225,9 @@ fun AdminDashboardScreen(
 
             // Scrollable Admin Tabs Row
             val tabs = if (isArabic) {
-                listOf("📊 الإحصائيات", "👥 إدارة الأعضاء", "🛡️ الرقابة والضوابط", "💳 الاشتراكات والأسعار")
+                listOf("📊 الإحصائيات", "👥 إدارة الأعضاء", "🛡️ الرقابة والضوابط", "💳 الاشتراكات والأسعار", "⚙️ تخصيص التطبيق والعملة")
             } else {
-                listOf("📊 Overview", "👥 Members", "🛡️ Moderation", "💳 Subscriptions")
+                listOf("📊 Overview", "👥 Members", "🛡️ Moderation", "💳 Subscriptions", "⚙️ Customization")
             }
 
             ScrollableTabRow(
@@ -587,6 +604,419 @@ fun AdminDashboardScreen(
                                 }
                             }
                         }
+                    }
+                }
+
+                4 -> {
+                    // TAB 5: APP CUSTOMIZATION, CURRENCY, DISCREET NOTIFICATIONS, LOGO & COLORS
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = if (isArabic) "إعدادات وتخصيص تطبيق سوا سوا ⚙️" else "App Customization & Global Settings ⚙️",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PetroleumGreenDark
+                        )
+
+                        // 1. Currency Configuration
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(imageVector = Icons.Default.CurrencyExchange, contentDescription = null, tint = PetroleumGreen, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (isArabic) "تحديد عملة التطبيق الرسمية" else "App Currency",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = if (isArabic)
+                                        "اختر العملة الأساسية لعرض الباقات والاشتراكات لجميع المستخدمين حسب البلد المستهدف"
+                                    else
+                                        "Select the default currency displayed for subscriptions and plans",
+                                    fontSize = 11.sp,
+                                    color = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                val currencies = listOf(
+                                    Triple("EGP", "🇪🇬 ج.م (الجنيه المصري)", "داخل مصر"),
+                                    Triple("USD", "🇺🇸 $ (الدولار الأمريكي)", "دولي/خارج مصر"),
+                                    Triple("SAR", "🇸🇦 ر.س (الريال السعودي)", "الخليج العربي"),
+                                    Triple("AED", "🇦🇪 د.إ (الدرهم الإماراتي)", "الإمارات")
+                                )
+
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    currencies.chunked(2).forEach { rowCurrs ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            rowCurrs.forEach { (code, label, sub) ->
+                                                val isSelected = selectedCurrency == code
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clip(RoundedCornerShape(12.dp))
+                                                        .border(
+                                                            width = if (isSelected) 2.dp else 1.dp,
+                                                            color = if (isSelected) PetroleumGreen else Color.LightGray.copy(alpha = 0.5f),
+                                                            shape = RoundedCornerShape(12.dp)
+                                                        )
+                                                        .background(if (isSelected) PetroleumGreen.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface)
+                                                        .clickable { selectedCurrency = code }
+                                                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                        Text(text = label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSelected) PetroleumGreenDark else Color.Black)
+                                                        Text(text = sub, fontSize = 9.sp, color = Color.Gray)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 2. Discreet Notifications Setting
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                        Icon(imageVector = Icons.Default.Notifications, contentDescription = null, tint = PetroleumGreen, modifier = Modifier.size(20.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column {
+                                            Text(
+                                                text = if (isArabic) "الإشعارات اللطيفة غير المحرجة 🌿" else "Discreet Privacy Notifications",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp
+                                            )
+                                            Text(
+                                                text = if (isArabic) "حماية خصوصية المستخدم على سطح وشاشة القفل" else "Protect user privacy on lock screen",
+                                                fontSize = 10.sp,
+                                                color = Color.Gray
+                                            )
+                                        }
+                                    }
+                                    Switch(
+                                        checked = isDiscreetNotificationsEnabled,
+                                        onCheckedChange = { isDiscreetNotificationsEnabled = it },
+                                        colors = SwitchDefaults.colors(checkedThumbColor = PetroleumGreen, checkedTrackColor = PetroleumGreenContainer)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = if (isArabic)
+                                        "يرسل التطبيق أي إشعار يحدث في الحساب كإعجاب أو رسالة أو وردة بعبارة لطيفة ومحايدة (مثل: 'تنبيه لطيف من سوا') دون ذكر تفاصيل محرجة."
+                                    else
+                                        "Sends notifications with privacy-friendly gentle phrases without exposing sensitive matrimony context.",
+                                    fontSize = 11.sp,
+                                    color = Color.DarkGray,
+                                    lineHeight = 16.sp
+                                )
+
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Button(
+                                    onClick = {
+                                        NotificationHelper.sendDiscreetNotification(
+                                            context = context,
+                                            title = "تنبيه لطيف من سوا 🌿",
+                                            discreetMessage = "لديك تفاعل جديد ونشاط في التطبيق"
+                                        )
+                                        notificationTestSentToast = true
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = PetroleumGreen),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(imageVector = Icons.Default.Campaign, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = if (isArabic) "إرسال إشعار تجريبي لطيف على سطح الهاتف 📲" else "Send Test Discreet Notification",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                if (notificationTestSentToast) {
+                                    Text(
+                                        text = "✓ تم إرسال الإشعار اللطيف على شريط تنبيهات الهاتف بنجاح",
+                                        fontSize = 10.sp,
+                                        color = PetroleumGreen,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // 3. Logo & App Icon Style Selector
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Text(
+                                    text = if (isArabic) "شكل لوجو وأيقونة التطبيق 🎨" else "App Logo & Icon Style",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = if (isArabic) "حدد مظهر الشعار (كتابة، صورة/أيقونة، أو كلاهما)" else "Select logo style (text, emblem icon, or combined)",
+                                    fontSize = 11.sp,
+                                    color = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val logoStyles = listOf(
+                                        Pair("COMBINED", "👑 مدمج (صورة + كتابة)"),
+                                        Pair("TYPOGRAPHY", "🔤 كتابة فقط"),
+                                        Pair("EMBLEM", "🖼️ شعار صورة فقط")
+                                    )
+
+                                    logoStyles.forEach { (id, label) ->
+                                        val isSelected = selectedLogoStyle == id
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .border(
+                                                    width = if (isSelected) 2.dp else 1.dp,
+                                                    color = if (isSelected) PetroleumGreen else Color.LightGray.copy(alpha = 0.5f),
+                                                    shape = RoundedCornerShape(10.dp)
+                                                )
+                                                .background(if (isSelected) PetroleumGreen.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface)
+                                                .clickable { selectedLogoStyle = id }
+                                                .padding(vertical = 10.dp, horizontal = 4.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = label,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                textAlign = TextAlign.Center,
+                                                color = if (isSelected) PetroleumGreenDark else Color.DarkGray
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // Live Visual Logo Preview
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(PetroleumGreenDark)
+                                        .padding(14.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    when (selectedLogoStyle) {
+                                        "TYPOGRAPHY" -> {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text(text = "سوا سوا", fontSize = 24.sp, fontWeight = FontWeight.Black, color = RadiantGold)
+                                                Text(text = "الزواج الإسلامي الشرعي الموثق", fontSize = 11.sp, color = Color.White.copy(alpha = 0.9f))
+                                            }
+                                        }
+                                        "EMBLEM" -> {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(54.dp)
+                                                    .clip(CircleShape)
+                                                    .background(GoldShineBrush),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(text = "👑", fontSize = 28.sp)
+                                            }
+                                        }
+                                        else -> {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(36.dp)
+                                                        .clip(CircleShape)
+                                                        .background(GoldShineBrush),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(text = "👑", fontSize = 20.sp)
+                                                }
+                                                Spacer(modifier = Modifier.width(10.dp))
+                                                Column {
+                                                    Text(text = "سوا سوا", fontSize = 18.sp, fontWeight = FontWeight.Black, color = RadiantGold)
+                                                    Text(text = "Sawa Sawa Matrimony", fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 4. Color Palette Customization
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(imageVector = Icons.Default.Palette, contentDescription = null, tint = PetroleumGreen, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (isArabic) "تعديل ألوان وثيم التطبيق 🎨" else "App Color Palette",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = if (isArabic) "تخصيص الهوية البصرية الرسمية للواجهات" else "Customize official brand identity colors",
+                                    fontSize = 11.sp,
+                                    color = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                val palettes = listOf(
+                                    Triple("PETROLEUM_GOLD", "الأخضر البترولي الملكي + الذهب المشع", listOf(Color(0xFF0F4C47), Color(0xFFD4AF37))),
+                                    Triple("ROYAL_NAVY", "الكحلي الملكي الفاخر + الذهب", listOf(Color(0xFF0D1B2A), Color(0xFFE5A93B))),
+                                    Triple("ISLAMIC_EMERALD", "الزمرد الإسلامي + الكهرمان", listOf(Color(0xFF1B4332), Color(0xFFD4A373))),
+                                    Triple("DESERT_ROSE", "الوردي الصحراوي الوقور + العاج", listOf(Color(0xFF5A189A), Color(0xFFE0AAFF)))
+                                )
+
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    palettes.forEach { (id, name, colors) ->
+                                        val isSelected = selectedColorPalette == id
+                                        Card(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { selectedColorPalette = id },
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = if (isSelected) PetroleumGreen.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface
+                                            ),
+                                            border = androidx.compose.foundation.BorderStroke(
+                                                width = if (isSelected) 2.dp else 1.dp,
+                                                color = if (isSelected) PetroleumGreen else Color.LightGray.copy(alpha = 0.4f)
+                                            )
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(10.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                        colors.forEach { c ->
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(20.dp)
+                                                                    .background(c, CircleShape)
+                                                                    .border(1.dp, Color.White, CircleShape)
+                                                            )
+                                                        }
+                                                    }
+                                                    Spacer(modifier = Modifier.width(10.dp))
+                                                    Text(text = name, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                                }
+
+                                                if (isSelected) {
+                                                    Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = PetroleumGreen, modifier = Modifier.size(18.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 5. Virtual Roses Threshold Setting
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "🌹", fontSize = 20.sp)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (isArabic) "حد باقات الورد لتجديد اشتراك البنات" else "Roses Required for Renewal",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = if (isArabic) "عدد باقات الورد التي تتيح للبنت تجديد اشتراك VIP مجاناً" else "Number of roses required to renew VIP membership for free",
+                                    fontSize = 11.sp,
+                                    color = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val thresholds = listOf(30, 50, 75, 100)
+                                    thresholds.forEach { t ->
+                                        val isSelected = rosesThresholdForRenewal == t
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .border(
+                                                    width = if (isSelected) 2.dp else 1.dp,
+                                                    color = if (isSelected) Color(0xFFE91E63) else Color.LightGray.copy(alpha = 0.5f),
+                                                    shape = RoundedCornerShape(10.dp)
+                                                )
+                                                .background(if (isSelected) Color(0xFFE91E63).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface)
+                                                .clickable { rosesThresholdForRenewal = t }
+                                                .padding(vertical = 8.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "$t 🌹",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isSelected) Color(0xFF880E4F) else Color.DarkGray
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
                     }
                 }
             }

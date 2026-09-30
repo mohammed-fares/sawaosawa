@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import com.example.model.AppLanguage
 import com.example.model.CandidateProfile
 import com.example.ui.components.ProfileBadge
+import com.example.ui.components.RoseShowerOverlay
 import com.example.ui.components.SwipeActionButtons
 import com.example.ui.theme.PetroleumGreen
 import com.example.ui.theme.PetroleumGreenContainer
@@ -73,6 +74,10 @@ import com.example.ui.theme.PetroleumGreenDark
 import com.example.ui.theme.RadiantGold
 import com.example.ui.theme.RadiantGoldContainer
 import com.example.ui.theme.RadiantGoldDark
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -84,9 +89,11 @@ fun CandidateDetailScreen(
     onInstantChat: () -> Unit,
     onLike: () -> Unit,
     onToggleBlur: () -> Unit,
+    onSendRose: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isArabic = language == AppLanguage.ARABIC
+    var showRoseShower by remember { mutableStateOf(false) }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -388,10 +395,19 @@ fun CandidateDetailScreen(
             ) {
                 SwipeActionButtons(
                     onPass = onPass,
+                    onSendRose = {
+                        showRoseShower = true
+                        onSendRose()
+                    },
                     onInstantChat = onInstantChat,
                     onLike = onLike
                 )
             }
+
+            RoseShowerOverlay(
+                visible = showRoseShower,
+                onFinished = { showRoseShower = false }
+            )
         }
     }
 }

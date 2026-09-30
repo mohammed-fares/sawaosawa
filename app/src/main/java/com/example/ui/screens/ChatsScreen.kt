@@ -58,6 +58,7 @@ import com.example.ui.theme.PetroleumGreenContainer
 import com.example.ui.theme.PetroleumGreenDark
 import com.example.ui.theme.RadiantGold
 import com.example.ui.theme.RadiantGoldContainer
+import com.example.ui.components.VipBadgeOverlay
 
 @Composable
 fun ChatsScreen(
@@ -188,17 +189,32 @@ fun ConversationItemView(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier
-                .size(54.dp)
-                .clip(CircleShape)
-                .border(2.dp, RadiantGold, CircleShape)
+            modifier = Modifier.size(54.dp)
         ) {
-            Image(
-                painter = painterResource(id = candidate.photoRes),
-                contentDescription = candidate.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+                    .border(2.dp, RadiantGold, CircleShape)
+            ) {
+                Image(
+                    painter = painterResource(id = candidate.photoRes),
+                    contentDescription = candidate.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            // Green online dot
+            if (candidate.isOnlineNow) {
+                Box(
+                    modifier = Modifier
+                        .size(13.dp)
+                        .align(Alignment.BottomEnd)
+                        .background(Color(0xFF4CAF50), CircleShape)
+                        .border(2.dp, Color.White, CircleShape)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(14.dp))
@@ -223,6 +239,10 @@ fun ConversationItemView(
                             tint = PetroleumGreen,
                             modifier = Modifier.size(15.dp)
                         )
+                    }
+                    if (candidate.isVip || candidate.isGoldMember) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        VipBadgeOverlay(text = "VIP 👑")
                     }
                 }
 

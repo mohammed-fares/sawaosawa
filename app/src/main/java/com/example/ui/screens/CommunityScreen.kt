@@ -79,6 +79,7 @@ import com.example.ui.theme.PetroleumGreenDark
 import com.example.ui.theme.RadiantGold
 import com.example.ui.theme.RadiantGoldContainer
 import com.example.ui.theme.RadiantGoldDark
+import com.example.ui.components.VipBadgeOverlay
 
 @Composable
 fun CommunityScreen(
@@ -455,19 +456,25 @@ fun CandidateGridCard(
                     }
                 }
 
-                // Heart / Match badge
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .background(MuzzPink, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(14.dp)
-                    )
+                // Heart / Match badge & VIP Overlay
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (candidate.isVip || candidate.isGoldMember) {
+                        VipBadgeOverlay(text = "VIP 👑")
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .background(MuzzPink, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
                 }
             }
 

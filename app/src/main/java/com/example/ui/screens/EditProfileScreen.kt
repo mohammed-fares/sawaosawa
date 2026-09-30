@@ -37,6 +37,17 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import android.graphics.Bitmap
+import coil.compose.AsyncImage
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -69,6 +80,7 @@ import com.example.ui.theme.PetroleumGreenContainer
 import com.example.ui.theme.PetroleumGreenDark
 import com.example.ui.theme.RadiantGold
 import com.example.ui.theme.RadiantGoldContainer
+import com.example.ui.theme.RadiantGoldDark
 
 @Composable
 fun EditProfileScreen(
@@ -103,6 +115,40 @@ fun EditProfileScreen(
     // App Presence & Availability Hours
     var activeHours by remember { mutableStateOf(user.activeHours) }
     var isOnlineNow by remember { mutableStateOf(user.isOnlineNow) }
+
+    // User Photos (up to 3 photos with one primary display photo)
+    var userPhotos by remember {
+        mutableStateOf(
+            if (user.photoUris.isNotEmpty()) user.photoUris.toMutableList()
+            else mutableListOf("default_avatar")
+        )
+    }
+    var selectedDisplayIndex by remember {
+        androidx.compose.runtime.mutableIntStateOf(
+            user.selectedPhotoIndex.coerceIn(0, (userPhotos.size - 1).coerceAtLeast(0))
+        )
+    }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null && userPhotos.size < 3) {
+            val updated = userPhotos.toMutableList()
+            updated.add(uri.toString())
+            userPhotos = updated
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null && userPhotos.size < 3) {
+            val updated = userPhotos.toMutableList()
+            // Tag with captured timestamp
+            updated.add("camera_captured_${System.currentTimeMillis()}")
+            userPhotos = updated
+        }
+    }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -158,7 +204,9 @@ fun EditProfileScreen(
                             chaperoneEmail = chaperoneEmail.trim(),
                             chaperonePhone = chaperonePhone.trim(),
                             activeHours = activeHours.trim(),
-                            isOnlineNow = isOnlineNow
+                            isOnlineNow = isOnlineNow,
+                            photoUris = userPhotos.toList(),
+                            selectedPhotoIndex = selectedDisplayIndex.coerceIn(0, (userPhotos.size - 1).coerceAtLeast(0))
                         )
                         onSave(updated)
                     },
@@ -186,32 +234,206 @@ fun EditProfileScreen(
                     .padding(horizontal = 20.dp, vertical = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Photo preview with edit indicator
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .border(3.dp, RadiantGold, CircleShape)
+                // Section: 3-Photo Upload & Display Selection Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.profile_sarah),
-                        contentDescription = user.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Change photo",
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp)
-                        )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = if (isArabic) "صور الحساب (بحد أقصى 3 صور) 📸" else "Profile Photos (Max 3)",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PetroleumGreenDark
+                                )
+                                Text(
+                                    text = if (isArabic) "حددي الصورة الرئيسية المميزة للعرض على حسابك" else "Select the primary photo to display",
+                                    fontSize = 11.sp,
+                                    color = Color.Gray
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(PetroleumGreen)
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = "${userPhotos.size}/3",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // 3 Photo Slots Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            for (slotIndex in 0 until 3) {
+                                val hasPhoto = slotIndex < userPhotos.size
+                                val isSelected = hasPhoto && slotIndex == selectedDisplayIndex
+
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(130.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .border(
+                                            width = if (isSelected) 2.5.dp else 1.dp,
+                                            color = if (isSelected) RadiantGold else Color.LightGray.copy(alpha = 0.5f),
+                                            shape = RoundedCornerShape(14.dp)
+                                        )
+                                        .background(if (hasPhoto) Color.Black else Color.LightGray.copy(alpha = 0.15f))
+                                        .clickable {
+                                            if (hasPhoto) {
+                                                selectedDisplayIndex = slotIndex
+                                            } else {
+                                                photoPickerLauncher.launch(
+                                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                                )
+                                            }
+                                        }
+                                ) {
+                                    if (hasPhoto) {
+                                        val photoUri = userPhotos[slotIndex]
+                                        if (photoUri.startsWith("content://") || photoUri.startsWith("file://") || photoUri.startsWith("http")) {
+                                            AsyncImage(
+                                                model = photoUri,
+                                                contentDescription = "User photo",
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        } else {
+                                            Image(
+                                                painter = painterResource(id = R.drawable.profile_sarah),
+                                                contentDescription = "User photo",
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
+
+                                        // Primary Display Badge
+                                        if (isSelected) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .align(Alignment.TopStart)
+                                                    .padding(4.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(RadiantGold)
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = "رئيسية ⭐",
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.Black
+                                                )
+                                            }
+                                        }
+
+                                        // Delete Button
+                                        if (userPhotos.size > 1) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .padding(4.dp)
+                                                    .size(24.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color.Black.copy(alpha = 0.6f))
+                                                    .clickable {
+                                                        val updated = userPhotos.toMutableList()
+                                                        updated.removeAt(slotIndex)
+                                                        userPhotos = updated
+                                                        if (selectedDisplayIndex >= userPhotos.size) {
+                                                            selectedDisplayIndex = 0
+                                                        }
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Delete",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        // Empty Slot
+                                        Column(
+                                            modifier = Modifier.fillMaxSize(),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.AddPhotoAlternate,
+                                                contentDescription = "Add Photo",
+                                                tint = Color.Gray,
+                                                modifier = Modifier.size(26.dp)
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = if (isArabic) "إضافة" else "Add",
+                                                fontSize = 11.sp,
+                                                color = Color.Gray,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Action Buttons: Open Gallery or Direct Camera
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                enabled = userPhotos.size < 3,
+                                colors = ButtonDefaults.buttonColors(containerColor = PetroleumGreen),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(imageVector = Icons.Default.Image, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(text = if (isArabic) "من الاستوديو" else "From Gallery", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = {
+                                    cameraLauncher.launch(null)
+                                },
+                                enabled = userPhotos.size < 3,
+                                colors = ButtonDefaults.buttonColors(containerColor = RadiantGoldDark),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(imageVector = Icons.Default.CameraAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(text = if (isArabic) "تصوير مباشر" else "Take Photo", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
                     }
                 }
 

@@ -11,6 +11,8 @@ import com.example.model.ChatMessage
 import com.example.model.CurrentUserProfile
 import com.example.model.FilterPreferences
 import com.example.model.MainNavigationTab
+import com.example.model.VirtualRose
+import com.example.data.RoseFirestoreService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -407,6 +409,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun sendRose(candidate: CandidateProfile) {
+        viewModelScope.launch {
+            candidateDao.incrementRoses(candidate.id)
+            val rose = VirtualRose(
+                senderId = _uiState.value.currentUser.phoneNumber,
+                senderName = _uiState.value.currentUser.name,
+                receiverId = candidate.id,
+                roseCount = 1,
+                timestamp = System.currentTimeMillis(),
+                message = "باقة ورد عطرة بنية التعارف الحلال 🌹"
+            )
+            RoseFirestoreService.sendRoseToUser(
+                rose = rose,
+                onSuccess = {},
+                onError = {}
+            )
+        }
+    }
+
+    fun renewSubscriptionWithRoses(): Boolean {
+        val currentRoses = _uiState.value.currentUser.rosesBalance
+        val requiredRoses = _uiState.value.currentUser.rosesRequiredForRenewal
+        if (currentRoses >= requiredRoses) {
+            _uiState.update { state ->
+                val updatedUser = state.currentUser.copy(
+                    rosesBalance = currentRoses - requiredRoses,
+                    isGoldMember = true,
+                    isVip = true,
+                    subscriptionPlan = "ROSE_RENEWAL",
+                    subscriptionPrice = "$requiredRoses باقة ورد 🌹",
+                    subscriptionExpiresAt = "30 نوفمبر 2026",
+                    boostsRemaining = state.currentUser.boostsRemaining + 3,
+                    instantChatsRemaining = state.currentUser.instantChatsRemaining + 12
+                )
+                state.copy(currentUser = updatedUser)
+            }
+            return true
+        }
+        return false
+    }
+
     fun toggleAudioPlayback(messageId: Long) {
         _uiState.update {
             if (it.activeAudioId == messageId && it.isAudioPlaying) {
@@ -506,17 +549,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun sendMessage(candidateId: String, text: String, isAudio: Boolean = false) {
-        if (text.isBlank() && !isAudio) return
+    fun sendMessage(candidateId: String, text: String, isAudio: Boolean = false, imageUrl: String? = null, audioDuration: String = "00:30") {
+        if (text.isBlank() && !isAudio && imageUrl == null) return
         viewModelScope.launch {
             chatDao.insertMessage(
                 ChatMessage(
                     candidateId = candidateId,
-                    text = if (isAudio) "تسجيل صوتي (00:30)" else text.trim(),
+                    text = if (isAudio) "تسجيل صوتي ($audioDuration)" else if (imageUrl != null) "📷 صورة مرفقة" else text.trim(),
                     isFromUser = true,
                     isChaperoneMonitored = _uiState.value.currentUser.isChaperoneActive,
                     isAudioVoiceNote = isAudio,
-                    audioDuration = if (isAudio) "00:30" else "00:00"
+                    audioDuration = audioDuration,
+                    imageUrl = imageUrl
                 )
             )
 
@@ -534,6 +578,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     isChaperoneMonitored = _uiState.value.currentUser.isChaperoneActive
                 )
             )
+            com.example.util.NotificationHelper.notifyNewDiscreetMessage(getApplication())
         }
     }
 

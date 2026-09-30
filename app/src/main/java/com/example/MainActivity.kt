@@ -126,6 +126,7 @@ class MainActivity : ComponentActivity() {
 
                         is ScreenState.Subscriptions -> {
                             SubscriptionScreen(
+                                user = uiState.currentUser,
                                 language = uiState.language,
                                 onPlanPurchased = { planId, price ->
                                     viewModel.purchasePlan(planId, price)
@@ -133,6 +134,16 @@ class MainActivity : ComponentActivity() {
                                         snackbarHostState.showSnackbar(
                                             if (isArabic) "👑 مبروك! تم تفعيل اشتراك $price" else "👑 Subscribed to $price"
                                         )
+                                    }
+                                },
+                                onRenewWithRoses = {
+                                    val ok = viewModel.renewSubscriptionWithRoses()
+                                    scope.launch {
+                                        if (ok) {
+                                            snackbarHostState.showSnackbar(
+                                                if (isArabic) "🌹 مبروك! تم تجديد العضوية الذهبية بـ 50 باقة ورد بنجاح" else "🌹 Renewed VIP with roses!"
+                                            )
+                                        }
                                     }
                                 },
                                 onClose = { viewModel.closeSubscriptions() }
@@ -251,6 +262,14 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onToggleBlur = {
                                     viewModel.toggleBlur(screen.candidate)
+                                },
+                                onSendRose = {
+                                    viewModel.sendRose(screen.candidate)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            if (isArabic) "🌹 أرسلت باقة ورد عطرة VIP إلى ${screen.candidate.name}" else "🌹 Sent VIP Rose to ${screen.candidate.name}"
+                                        )
+                                    }
                                 }
                             )
                         }
@@ -280,7 +299,13 @@ class MainActivity : ComponentActivity() {
                                     viewModel.sendMessage(screen.candidate.id, text)
                                 },
                                 onSendVoiceNote = {
-                                    viewModel.sendMessage(screen.candidate.id, "", isAudio = true)
+                                    viewModel.sendMessage(screen.candidate.id, "", isAudio = true, audioDuration = "00:30")
+                                },
+                                onSendVoiceNoteWithDuration = { duration ->
+                                    viewModel.sendMessage(screen.candidate.id, "", isAudio = true, audioDuration = duration)
+                                },
+                                onSendImage = { imageUri ->
+                                    viewModel.sendMessage(screen.candidate.id, "", isAudio = false, imageUrl = imageUri)
                                 },
                                 onStartVideoCall = {
                                     viewModel.startVideoCall(screen.candidate, isIncoming = false)
@@ -325,6 +350,14 @@ class MainActivity : ComponentActivity() {
                                             onPass = { viewModel.passCurrentCandidate() },
                                             onInstantChat = { candidate, msg -> viewModel.instantChat(candidate, msg) },
                                             onLike = { viewModel.likeCurrentCandidate() },
+                                            onSendRose = { candidate ->
+                                                viewModel.sendRose(candidate)
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        if (isArabic) "🌹 أرسلت باقة ورد عطرة VIP إلى ${candidate.name}" else "🌹 Sent VIP Rose to ${candidate.name}"
+                                                    )
+                                                }
+                                            },
                                             onResetDiscovery = { viewModel.resetDiscovery() },
                                             modifier = Modifier.padding(innerPadding)
                                         )

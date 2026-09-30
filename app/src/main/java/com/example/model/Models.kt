@@ -53,7 +53,9 @@ data class CandidateProfile(
     val latitude: Double = 30.0444, // Default Cairo/Egypt or specific coordinates
     val longitude: Double = 31.2357,
     val activeHours: String = "مساءً (من 7:00 م إلى 11:00 م)",
-    val isOnlineNow: Boolean = true
+    val isOnlineNow: Boolean = true,
+    val isVip: Boolean = true,
+    val rosesReceivedCount: Int = 18
 )
 
 @Entity(tableName = "chat_messages")
@@ -65,7 +67,7 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis(),
     val isChaperoneMonitored: Boolean = true,
     val isAudioVoiceNote: Boolean = false,
-    val audioDuration: String = "00:37",
+    val audioDuration: String = "00:30",
     val imageUrl: String? = null
 )
 
@@ -102,6 +104,7 @@ data class CurrentUserProfile(
     val completionPercentage: Int = 96,
     val isVerified: Boolean = true,
     val isGoldMember: Boolean = true,
+    val isVip: Boolean = true,
     val subscriptionPlan: String = "GOLD_MONTHLY",
     val subscriptionPrice: String = "199.99 ج.م / شهرياً",
     val subscriptionExpiresAt: String = "30 أكتوبر 2026",
@@ -117,7 +120,31 @@ data class CurrentUserProfile(
     val phoneNumber: String = "+20 10 1234 5678",
     val email: String = "sara.matrimony@example.com",
     val isRegisteredWithFirebase: Boolean = false,
-    val firebaseUid: String? = null
+    val firebaseUid: String? = null,
+    val rosesBalance: Int = 38, // Virtual roses received by female user
+    val rosesRequiredForRenewal: Int = 50,
+    val photoUris: List<String> = emptyList(), // Up to 3 user photos
+    val selectedPhotoIndex: Int = 0 // Which photo is primary
+)
+
+data class VirtualRose(
+    val id: String = "",
+    val senderId: String = "",
+    val senderName: String = "",
+    val receiverId: String = "",
+    val roseCount: Int = 1,
+    val timestamp: Long = System.currentTimeMillis(),
+    val message: String = "باقة ورد عطرة بنية التعارف الحلال 🌹"
+)
+
+data class AppGlobalSettings(
+    val appCurrency: String = "EGP", // EGP, SAR, USD, AED
+    val appCurrencySymbol: String = "ج.م",
+    val primaryColorHex: Long = 0xFF0F4C47, // Petroleum Green
+    val goldColorHex: Long = 0xFFD4AF37,    // Radiant Gold
+    val logoStyle: String = "COMBINED",     // "EMBLEM", "TYPOGRAPHY", "COMBINED"
+    val discreteNotifications: Boolean = true,
+    val rosesToRenewSubscription: Int = 50
 )
 
 data class SubscriptionPlan(

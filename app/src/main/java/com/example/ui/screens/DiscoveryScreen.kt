@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.example.model.AppLanguage
 import com.example.model.CandidateProfile
 import com.example.ui.components.CandidateCard
+import com.example.ui.components.RoseShowerOverlay
 import com.example.ui.components.SawaTopBar
 import com.example.ui.components.SwipeActionButtons
 import com.example.ui.theme.MuzzPurpleChat
@@ -72,11 +73,13 @@ fun DiscoveryScreen(
     onPass: () -> Unit,
     onInstantChat: (CandidateProfile, String) -> Unit,
     onLike: () -> Unit,
+    onSendRose: (CandidateProfile) -> Unit = {},
     onResetDiscovery: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isArabic = language == AppLanguage.ARABIC
     var showInstantChatDialog by remember { mutableStateOf(false) }
+    var showRoseShower by remember { mutableStateOf(false) }
     var instantMessageText by remember {
         mutableStateOf(
             if (isArabic)
@@ -141,12 +144,21 @@ fun DiscoveryScreen(
         if (currentCandidate != null) {
             SwipeActionButtons(
                 onPass = onPass,
+                onSendRose = {
+                    showRoseShower = true
+                    onSendRose(currentCandidate)
+                },
                 onInstantChat = { showInstantChatDialog = true },
                 onLike = onLike
             )
         } else {
             Spacer(modifier = Modifier.height(76.dp))
         }
+
+        RoseShowerOverlay(
+            visible = showRoseShower,
+            onFinished = { showRoseShower = false }
+        )
 
         SnackbarHost(hostState = snackbarHostState)
     }

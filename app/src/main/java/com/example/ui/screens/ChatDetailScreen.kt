@@ -24,18 +24,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.Gif
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
@@ -76,6 +81,8 @@ import com.example.ui.theme.PetroleumGreenContainer
 import com.example.ui.theme.PetroleumGreenDark
 import com.example.ui.theme.RadiantGold
 
+import com.example.ui.components.VipBadgeOverlay
+
 @Composable
 fun ChatDetailScreen(
     candidate: CandidateProfile,
@@ -86,6 +93,8 @@ fun ChatDetailScreen(
     onBack: () -> Unit,
     onSendMessage: (String) -> Unit,
     onSendVoiceNote: () -> Unit,
+    onSendVoiceNoteWithDuration: (String) -> Unit = {},
+    onSendImage: (String) -> Unit = {},
     onStartVideoCall: () -> Unit,
     onOpenChaperoneNotice: () -> Unit,
     onToggleAudio: (Long) -> Unit,
@@ -97,6 +106,31 @@ fun ChatDetailScreen(
     var inputText by remember { mutableStateOf("") }
     var selectedChatTab by remember { mutableIntStateOf(0) }
     val listState = rememberLazyListState()
+
+    var isRecordingVoiceNote by remember { mutableStateOf(false) }
+    var recordingSeconds by remember { mutableIntStateOf(0) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            onSendImage(uri.toString())
+        }
+    }
+
+    LaunchedEffect(isRecordingVoiceNote) {
+        if (isRecordingVoiceNote) {
+            recordingSeconds = 0
+            while (isRecordingVoiceNote && recordingSeconds < 30) {
+                kotlinx.coroutines.delay(1000)
+                recordingSeconds++
+            }
+            if (isRecordingVoiceNote && recordingSeconds >= 30) {
+                isRecordingVoiceNote = false
+                onSendVoiceNoteWithDuration("00:30")
+            }
+        }
+    }
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
@@ -150,11 +184,17 @@ fun ChatDetailScreen(
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = if (isArabic) candidate.name else candidate.nameEn,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = if (isArabic) candidate.name else candidate.nameEn,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (candidate.isVip || candidate.isGoldMember) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            VipBadgeOverlay(text = "VIP 👑")
+                        }
+                    }
                     Text(
                         text = if (isArabic) "متصل الآن • زواج شرعي" else "Online • Halal Match",
                         fontSize = 11.sp,
@@ -264,85 +304,164 @@ fun ChatDetailScreen(
                     }
                 }
 
-                // Chat Input Bar (مطابقة لصورة 2.webp: GIF, Camera, Mic, Clip, Input, Send)
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    tonalElevation = 4.dp,
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                // Chat Input Bar (Gallery photo, 30s Mic, Capsule Input, Send - No GIF or external attachments)
+                if (isRecordingVoiceNote) {
+                    // Active 30-Second Voice Recording Bar
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        tonalElevation = 6.dp,
+                        color = Color(0xFF1E282D)
                     ) {
-                        IconButton(onClick = {}, modifier = Modifier.size(36.dp)) {
-                            Icon(imageVector = Icons.Default.Gif, contentDescription = "GIF", tint = Color.Gray)
-                        }
-
-                        IconButton(onClick = {}, modifier = Modifier.size(36.dp)) {
-                            Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Camera", tint = Color.Gray, modifier = Modifier.size(20.dp))
-                        }
-
-                        IconButton(
-                            onClick = onSendVoiceNote,
+                        Row(
                             modifier = Modifier
-                                .testTag("record_voice_note_button")
-                                .size(36.dp)
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(imageVector = Icons.Default.Mic, contentDescription = "Voice Note", tint = PetroleumGreen, modifier = Modifier.size(22.dp))
-                        }
-
-                        // Text Field capsule
-                        OutlinedTextField(
-                            value = inputText,
-                            onValueChange = { inputText = it },
-                            placeholder = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .background(Color(0xFFE53935), CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = if (isArabic) "رسالة ${candidate.name}" else "Message ${candidate.nameEn}",
-                                    fontSize = 13.sp,
-                                    color = Color.Gray
+                                    text = "00:${String.format("%02d", recordingSeconds)} / 00:30",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
                                 )
-                            },
-                            trailingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.AttachFile,
-                                    contentDescription = "Attach",
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(20.dp)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "ılıll|llılı|l|ll",
+                                    fontSize = 14.sp,
+                                    color = RadiantGold,
+                                    fontWeight = FontWeight.Bold
                                 )
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("chat_message_input"),
-                            shape = RoundedCornerShape(24.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PetroleumGreen,
-                                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
-                            ),
-                            maxLines = 2
-                        )
+                            }
 
-                        Spacer(modifier = Modifier.width(6.dp))
-
-                        IconButton(
-                            onClick = {
-                                if (inputText.isNotBlank()) {
-                                    onSendMessage(inputText)
-                                    inputText = ""
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(
+                                    onClick = { isRecordingVoiceNote = false },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Cancel",
+                                        tint = Color.LightGray
+                                    )
                                 }
-                            },
+                                Spacer(modifier = Modifier.width(6.dp))
+                                IconButton(
+                                    onClick = {
+                                        isRecordingVoiceNote = false
+                                        val dur = String.format("00:%02d", recordingSeconds.coerceAtLeast(1))
+                                        onSendVoiceNoteWithDuration(dur)
+                                    },
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(PetroleumGreen, CircleShape)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = "Send Voice Note",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Normal Input Bar
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        tonalElevation = 4.dp,
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Row(
                             modifier = Modifier
-                                .testTag("chat_send_button")
-                                .size(44.dp)
-                                .background(PetroleumGreen, CircleShape)
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Send,
-                                contentDescription = "Send",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                            // 1. Gallery Photo Picker Button (إرسال صورة من الاستوديو)
+                            IconButton(
+                                onClick = {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Image,
+                                    contentDescription = "Send Photo from Gallery",
+                                    tint = PetroleumGreen,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            // 2. 30-Second Voice Recorder Button (التسجيل فى المايك بمدة لا تتجاوز 30 ثانية)
+                            IconButton(
+                                onClick = { isRecordingVoiceNote = true },
+                                modifier = Modifier
+                                    .testTag("record_voice_note_button")
+                                    .size(38.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = "Voice Note (max 30s)",
+                                    tint = PetroleumGreen,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            // 3. Message Input (Capsule without GIF or Attachments)
+                            OutlinedTextField(
+                                value = inputText,
+                                onValueChange = { inputText = it },
+                                placeholder = {
+                                    Text(
+                                        text = if (isArabic) "رسالة ${candidate.name}..." else "Message ${candidate.nameEn}...",
+                                        fontSize = 13.sp,
+                                        color = Color.Gray
+                                    )
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("chat_message_input"),
+                                shape = RoundedCornerShape(24.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = PetroleumGreen,
+                                    unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
+                                ),
+                                maxLines = 2
                             )
+
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            // 4. Send Message Button
+                            IconButton(
+                                onClick = {
+                                    if (inputText.isNotBlank()) {
+                                        onSendMessage(inputText)
+                                        inputText = ""
+                                    }
+                                },
+                                modifier = Modifier
+                                    .testTag("chat_send_button")
+                                    .size(42.dp)
+                                    .background(PetroleumGreen, CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Send,
+                                    contentDescription = "Send",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -443,6 +562,45 @@ fun ChatBubbleItem(
                         tint = if (isUser) PetroleumGreen else RadiantGold,
                         modifier = Modifier.size(15.dp)
                     )
+                }
+            }
+        } else if (message.imageUrl != null) {
+            // Photo Message Bubble (صورة من الاستوديو)
+            Box(
+                modifier = Modifier
+                    .widthIn(max = 260.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 16.dp,
+                            bottomStart = if (isUser) 16.dp else 4.dp,
+                            bottomEnd = if (isUser) 4.dp else 16.dp
+                        )
+                    )
+                    .background(
+                        if (isUser) PetroleumGreen else MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    .padding(6.dp)
+            ) {
+                Column {
+                    AsyncImage(
+                        model = message.imageUrl,
+                        contentDescription = "Shared photo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                    if (message.text.isNotBlank() && message.text != "📷 صورة مرفقة") {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = message.text,
+                            fontSize = 13.sp,
+                            color = if (isUser) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
                 }
             }
         } else {
