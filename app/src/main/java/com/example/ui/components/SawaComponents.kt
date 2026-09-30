@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Block
@@ -97,48 +98,59 @@ fun SawaSawaLogoBadge(
     modifier: Modifier = Modifier,
     isArabic: Boolean = true,
     showSubtitle: Boolean = true,
-    darkStyle: Boolean = false
+    darkStyle: Boolean = false,
+    logoStyle: String = "COMBINED" // "COMBINED", "EMBLEM", "TYPOGRAPHY"
 ) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        // Infinity loop emblem representing Halal marriage rings in Petroleum Green & Radiant Gold
-        Box(
-            modifier = Modifier
-                .size(34.dp)
-                .background(
-                    brush = Brush.linearGradient(listOf(PetroleumGreen, RadiantGold)),
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.AllInclusive,
-                contentDescription = "سوا سوا",
-                tint = Color.White,
-                modifier = Modifier.size(22.dp)
-            )
+        // 1. Emblem icon (if COMBINED or EMBLEM)
+        if (logoStyle == "COMBINED" || logoStyle == "EMBLEM") {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(
+                        brush = Brush.linearGradient(listOf(PetroleumGreen, RadiantGold)),
+                        shape = CircleShape
+                    )
+                    .border(1.5.dp, RadiantGold.copy(alpha = 0.8f), CircleShape)
+                    .shadow(4.dp, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AllInclusive,
+                    contentDescription = "سوا سوا",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.width(8.dp))
+        if (logoStyle == "COMBINED") {
+            Spacer(modifier = Modifier.width(8.dp))
+        }
 
-        Column(horizontalAlignment = Alignment.Start) {
-            Text(
-                text = if (isArabic) "سوا سوا" else "SAWA SAWA",
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 20.sp,
-                color = if (darkStyle) Color.White else PetroleumGreen,
-                letterSpacing = if (isArabic) 0.sp else 1.5.sp
-            )
-            if (showSubtitle) {
+        // 2. Typography brand text (if COMBINED or TYPOGRAPHY)
+        if (logoStyle == "COMBINED" || logoStyle == "TYPOGRAPHY") {
+            Column(horizontalAlignment = Alignment.Start) {
                 Text(
-                    text = if (isArabic) "زواج إسلامي حلال" else "Halal Muslim Marriage",
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = RadiantGoldDark
+                    text = if (isArabic) "سوا سوا" else "SAWA SAWA",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp,
+                    color = if (darkStyle) Color.White else PetroleumGreen,
+                    letterSpacing = if (isArabic) 0.sp else 1.5.sp
                 )
+                if (showSubtitle) {
+                    Text(
+                        text = if (isArabic) "زواج إسلامي حلال" else "Halal Muslim Marriage",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = RadiantGoldDark
+                    )
+                }
             }
         }
     }
@@ -152,6 +164,7 @@ fun SawaTopBar(
     onGoldClick: () -> Unit,
     boostActive: Boolean = false,
     boostsCount: Int = 3,
+    logoStyle: String = "COMBINED",
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -177,8 +190,8 @@ fun SawaTopBar(
             )
         }
 
-        // Center Logo
-        SawaSawaLogoBadge(isArabic = isArabic, showSubtitle = true)
+        // Center Logo with dynamic style
+        SawaSawaLogoBadge(isArabic = isArabic, showSubtitle = true, logoStyle = logoStyle)
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             // Gold Center crown button
@@ -323,7 +336,7 @@ fun CandidateCard(
                 }
             }
 
-            // Light, subtle gradient overlay at the very bottom so the photo remains clear and visible
+            // Very subtle low-profile gradient overlay strictly at the very bottom so photo remains 100% visible
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -332,45 +345,97 @@ fun CandidateCard(
                             colors = listOf(
                                 Color.Transparent,
                                 Color.Transparent,
-                                Color.Black.copy(alpha = 0.35f),
-                                Color.Black.copy(alpha = 0.85f)
+                                Color.Black.copy(alpha = 0.25f),
+                                Color.Black.copy(alpha = 0.75f)
                             ),
-                            startY = 480f
+                            startY = 650f
                         )
                     )
             )
 
-            // Top Overlay: VIP Badge, Verified, Roses & Blur lock
+            // Minimalist Top Bar: VIP Badge and Privacy lock only
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(14.dp),
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Top Start: VIP Badge & Verified
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (candidate.isVip) {
-                        VipBadgeOverlay()
-                        Spacer(modifier = Modifier.width(6.dp))
-                    }
+                // Top Start: VIP Badge (if VIP)
+                if (candidate.isVip || candidate.isGoldMember) {
+                    VipBadgeOverlay()
+                } else {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
 
-                    if (candidate.isVerified) {
-                        Row(
-                            modifier = Modifier
-                                .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                // Top End: Minimalist Blur toggle
+                IconButton(
+                    onClick = onToggleBlur,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = if (candidate.isPhotoBlurred) Icons.Default.Lock else Icons.Default.LockOpen,
+                        contentDescription = "Toggle blur",
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
+
+            // Minimalist Bottom Scrim: Clean Name, Age, and Location pill
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = if (isArabic) "${candidate.name}، ${candidate.age}" else "${candidate.nameEn}, ${candidate.age}",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        if (candidate.isVerified) {
+                            Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Default.Verified,
                                 contentDescription = null,
                                 tint = RadiantGold,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(16.dp)
                             )
-                            Spacer(modifier = Modifier.width(3.dp))
+                        }
+                    }
+                    Text(
+                        text = "📍 ${if (isArabic) candidate.city else candidate.cityEn}",
+                        color = Color.White.copy(alpha = 0.90f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Online indicator pill
+                if (candidate.isOnlineNow) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF2E7D32).copy(alpha = 0.85f))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(Color(0xFF81C784), CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = if (isArabic) "موثّق" else "Verified",
+                                text = if (isArabic) "متصل" else "Online",
                                 color = Color.White,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
@@ -378,86 +443,6 @@ fun CandidateCard(
                         }
                     }
                 }
-
-                // Top End: Rose counter & Privacy lock
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (candidate.rosesReceivedCount > 0) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0xFF880E4F).copy(alpha = 0.75f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = "🌹 ${candidate.rosesReceivedCount}",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(6.dp))
-                    }
-
-                    IconButton(
-                        onClick = onToggleBlur,
-                        modifier = Modifier
-                            .size(34.dp)
-                            .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = if (candidate.isPhotoBlurred) Icons.Default.Lock else Icons.Default.LockOpen,
-                            contentDescription = "Toggle blur",
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-            }
-
-            // Bottom Profile Info - Clean & Uncluttered so the photo shines
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
-            ) {
-                // Name & Age
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start
-                ) {
-                    Text(
-                        text = if (isArabic) "${candidate.name}، ${candidate.age}" else "${candidate.nameEn}, ${candidate.age}",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    if (candidate.isVerified) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.Default.Verified,
-                            contentDescription = null,
-                            tint = RadiantGold,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(7.dp)
-                            .background(if (candidate.isOnlineNow) Color(0xFF4CAF50) else Color.LightGray, CircleShape)
-                    )
-                }
-
-                // Single Clean Subtitle line: City & Profession
-                Text(
-                    text = "📍 ${if (isArabic) candidate.city else candidate.cityEn} • ${if (isArabic) candidate.profession else candidate.professionEn}",
-                    color = Color.White.copy(alpha = 0.90f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
             }
         }
     }
@@ -541,18 +526,20 @@ fun SwipeActionButtons(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1. Pass / Dismiss Button
+        // 1. Pass Button (Custom sleek cancel icon)
         IconButton(
             onClick = onPass,
             modifier = Modifier
                 .testTag("pass_button")
-                .size(50.dp)
-                .background(Color(0xFF37474F), CircleShape)
-                .shadow(4.dp, CircleShape)
+                .size(52.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF2C3437))
+                .border(1.5.dp, Color.White.copy(alpha = 0.25f), CircleShape)
+                .shadow(6.dp, CircleShape)
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
@@ -562,54 +549,64 @@ fun SwipeActionButtons(
             )
         }
 
-        // 2. Virtual Rose 🌹 Button (إرسال باقة ورد VIP)
+        // 2. Virtual Rose 🌹 Button (Golden aura + deep rose gradient)
         IconButton(
             onClick = onSendRose,
             modifier = Modifier
                 .testTag("rose_button")
-                .size(56.dp)
+                .size(60.dp)
+                .clip(CircleShape)
                 .background(
-                    brush = Brush.radialGradient(listOf(Color(0xFFE91E63), Color(0xFF880E4F))),
+                    brush = Brush.radialGradient(listOf(Color(0xFFFF2D55), Color(0xFF880E4F))),
                     shape = CircleShape
                 )
                 .border(2.dp, RadiantGold, CircleShape)
-                .shadow(6.dp, CircleShape)
+                .shadow(10.dp, CircleShape)
         ) {
-            Text(text = "🌹", fontSize = 24.sp)
+            Text(text = "🌹", fontSize = 28.sp)
         }
 
-        // 3. Instant Chat Button
+        // 3. Instant Chat Button (Direct instant message icon)
         IconButton(
             onClick = onInstantChat,
             modifier = Modifier
                 .testTag("instant_chat_button")
-                .size(50.dp)
-                .background(MuzzPurpleChat, CircleShape)
-                .shadow(4.dp, CircleShape)
+                .size(52.dp)
+                .clip(CircleShape)
+                .background(
+                    brush = Brush.linearGradient(listOf(Color(0xFF3F51B5), Color(0xFF1A237E))),
+                    shape = CircleShape
+                )
+                .border(1.5.dp, Color(0xFF7986CB), CircleShape)
+                .shadow(6.dp, CircleShape)
         ) {
             Icon(
-                imageVector = Icons.Default.ChatBubble,
+                imageVector = Icons.AutoMirrored.Filled.Send,
                 contentDescription = "Instant Chat",
                 tint = Color.White,
                 modifier = Modifier.size(22.dp)
             )
         }
 
-        // 4. Like / Match Button
+        // 4. Like / Match Button (Vibrant pink with radiant gold ring)
         IconButton(
             onClick = onLike,
             modifier = Modifier
                 .testTag("like_button")
-                .size(58.dp)
-                .background(MuzzPink, CircleShape)
-                .border(2.dp, RadiantGold, CircleShape)
-                .shadow(6.dp, CircleShape)
+                .size(62.dp)
+                .clip(CircleShape)
+                .background(
+                    brush = Brush.linearGradient(listOf(Color(0xFFFF3366), Color(0xFFE91E63))),
+                    shape = CircleShape
+                )
+                .border(2.5.dp, RadiantGold, CircleShape)
+                .shadow(10.dp, CircleShape)
         ) {
             Icon(
                 imageVector = Icons.Default.Favorite,
                 contentDescription = "Like",
                 tint = Color.White,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
     }

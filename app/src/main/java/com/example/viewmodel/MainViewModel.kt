@@ -13,6 +13,12 @@ import com.example.model.FilterPreferences
 import com.example.model.MainNavigationTab
 import com.example.model.VirtualRose
 import com.example.data.RoseFirestoreService
+import com.example.model.AppGlobalSettings
+import com.example.model.AdminReport
+import com.example.model.PhotoVerificationRequest
+import com.example.model.TransactionRecord
+import com.example.ui.components.TopNotificationData
+import com.example.util.SecureImagePickerHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,7 +66,14 @@ data class UiState(
     val userLatitude: Double = 30.0444, // Default Cairo
     val userLongitude: Double = 31.2357,
     val isGpsActive: Boolean = false,
-    val locationStatusText: String = "القاهرة، مصر"
+    val locationStatusText: String = "القاهرة، مصر",
+    val topNotification: TopNotificationData? = null,
+    val appSettings: AppGlobalSettings = AppGlobalSettings(),
+    val verificationRequests: List<PhotoVerificationRequest> = emptyList(),
+    val transactions: List<TransactionRecord> = emptyList(),
+    val reports: List<AdminReport> = emptyList(),
+    val showRocketTakeoffOverlay: Boolean = false,
+    val showRoseShowerOverlay: Boolean = false
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -84,6 +97,108 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 for (msg in InitialData.initialChatMessages) {
                     chatDao.insertMessage(msg)
                 }
+            }
+
+            // Populate sample verification requests, transactions and reports for admin dashboard & testing
+            val sampleVerificationRequests = listOf(
+                PhotoVerificationRequest(
+                    id = "req_101",
+                    userId = "user_sarah",
+                    userName = "سارة أحمد",
+                    userAvatarRes = com.example.R.drawable.profile_sarah,
+                    userPhotoUri = null,
+                    selfiePhotoUri = null,
+                    timestamp = "منذ 15 دقيقة",
+                    status = "PENDING"
+                ),
+                PhotoVerificationRequest(
+                    id = "req_102",
+                    userId = "user_layla",
+                    userName = "ليلى محمود",
+                    userAvatarRes = com.example.R.drawable.profile_layla,
+                    userPhotoUri = null,
+                    selfiePhotoUri = null,
+                    timestamp = "منذ ساعة",
+                    status = "PENDING"
+                ),
+                PhotoVerificationRequest(
+                    id = "req_103",
+                    userId = "user_nadia",
+                    userName = "نادية كريم",
+                    userAvatarRes = com.example.R.drawable.profile_sarah,
+                    userPhotoUri = null,
+                    selfiePhotoUri = null,
+                    timestamp = "أمس",
+                    status = "APPROVED"
+                )
+            )
+
+            val sampleTransactions = listOf(
+                TransactionRecord(
+                    id = "TXN-882194",
+                    userId = "user_ahmed",
+                    userName = "أحمد خليل",
+                    planId = "MONTHLY",
+                    planTitle = "الباقة الشهرية المميزة",
+                    amount = "199 ج.م",
+                    currency = "EGP",
+                    paymentMethod = "VODAFONE_CASH",
+                    timestamp = "اليوم 02:40 م",
+                    status = "COMPLETED"
+                ),
+                TransactionRecord(
+                    id = "TXN-741902",
+                    userId = "user_omar",
+                    userName = "عمر فاروق",
+                    planId = "ANNUAL",
+                    planTitle = "الباقة السنوية الكاملة",
+                    amount = "899 ج.م",
+                    currency = "EGP",
+                    paymentMethod = "FAWRY",
+                    timestamp = "أمس 11:15 ص",
+                    status = "COMPLETED"
+                ),
+                TransactionRecord(
+                    id = "TXN-631024",
+                    userId = "user_tariq",
+                    userName = "طارق زيدان",
+                    planId = "BUNDLE",
+                    planTitle = "باقة الحلال الشاملة VIP",
+                    amount = "349 ج.م",
+                    currency = "EGP",
+                    paymentMethod = "APPLE_PAY",
+                    timestamp = "منذ يومين",
+                    status = "COMPLETED"
+                )
+            )
+
+            val sampleReports = listOf(
+                AdminReport(
+                    id = "r1",
+                    reporterName = "سارة",
+                    reportedUserId = "c1",
+                    reportedUserName = "عدنان",
+                    reason = "طلب التواصل خارج التطبيق بدون علم الولي",
+                    timestamp = "منذ 15 دقيقة",
+                    status = "PENDING"
+                ),
+                AdminReport(
+                    id = "r2",
+                    reporterName = "نور",
+                    reportedUserId = "c4",
+                    reportedUserName = "نادية",
+                    reason = "اشتباه في صورة الحساب الشخصي",
+                    timestamp = "منذ ساعتين",
+                    status = "PENDING"
+                )
+            )
+
+            _uiState.update { state ->
+                state.copy(
+                    verificationRequests = sampleVerificationRequests,
+                    transactions = sampleTransactions,
+                    reports = sampleReports
+                )
             }
         }
     }
@@ -405,7 +520,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun activateBoost() {
         _uiState.update {
             val remaining = if (it.boostsRemaining > 0) it.boostsRemaining - 1 else 0
-            it.copy(boostActive = true, boostsRemaining = remaining)
+            it.copy(
+                boostActive = true,
+                boostsRemaining = remaining,
+                showRocketTakeoffOverlay = true
+            )
         }
     }
 
@@ -626,5 +745,318 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
             ScreenState.Onboarding -> {}
         }
+    }
+
+    // Top In-App Floating Notification Management
+    fun showTopNotification(
+        iconEmoji: String = "✨",
+        title: String,
+        message: String? = null,
+        isGoldAlert: Boolean = false,
+        durationMs: Long = 3200L
+    ) {
+        _uiState.update {
+            it.copy(
+                topNotification = TopNotificationData(
+                    id = System.currentTimeMillis(),
+                    iconEmoji = iconEmoji,
+                    title = title,
+                    message = message,
+                    isGoldAlert = isGoldAlert,
+                    durationMs = durationMs
+                )
+            )
+        }
+    }
+
+    fun dismissTopNotification() {
+        _uiState.update { it.copy(topNotification = null) }
+    }
+
+    // App Global Settings Management (Admin Control Panel)
+    fun updateAppSettings(settings: AppGlobalSettings) {
+        _uiState.update { it.copy(appSettings = settings) }
+    }
+
+    fun updateCurrency(currencyCode: String, symbol: String) {
+        _uiState.update { state ->
+            val updatedSettings = state.appSettings.copy(
+                appCurrency = currencyCode,
+                appCurrencySymbol = symbol
+            )
+            state.copy(appSettings = updatedSettings)
+        }
+    }
+
+    fun updateLogoStyle(style: String) {
+        _uiState.update { state ->
+            val updatedSettings = state.appSettings.copy(logoStyle = style)
+            state.copy(appSettings = updatedSettings)
+        }
+    }
+
+    fun updateThemeColors(primaryHex: Long, goldHex: Long) {
+        _uiState.update { state ->
+            val updatedSettings = state.appSettings.copy(
+                primaryColorHex = primaryHex,
+                goldColorHex = goldHex
+            )
+            state.copy(appSettings = updatedSettings)
+        }
+    }
+
+    fun updateRosesRenewalThreshold(roses: Int) {
+        _uiState.update { state ->
+            val updatedSettings = state.appSettings.copy(rosesToRenewSubscription = roses)
+            val updatedUser = state.currentUser.copy(rosesRequiredForRenewal = roses)
+            state.copy(appSettings = updatedSettings, currentUser = updatedUser)
+        }
+    }
+
+    // User Profile Photos Management (Secure, max 3 photos)
+    fun addProfilePhoto(filePath: String) {
+        _uiState.update { state ->
+            val currentList = state.currentUser.photoUris.toMutableList()
+            if (currentList.size < 3) {
+                currentList.add(filePath)
+                val updatedUser = state.currentUser.copy(photoUris = currentList)
+                state.copy(currentUser = updatedUser)
+            } else {
+                state
+            }
+        }
+    }
+
+    fun removeProfilePhoto(index: Int) {
+        _uiState.update { state ->
+            val currentList = state.currentUser.photoUris.toMutableList()
+            if (index in currentList.indices) {
+                val removedPath = currentList.removeAt(index)
+                SecureImagePickerHelper.deletePhotoFile(removedPath)
+                val newSelectedIndex = state.currentUser.selectedPhotoIndex.coerceIn(
+                    0, (currentList.size - 1).coerceAtLeast(0)
+                )
+                val updatedUser = state.currentUser.copy(
+                    photoUris = currentList,
+                    selectedPhotoIndex = newSelectedIndex
+                )
+                state.copy(currentUser = updatedUser)
+            } else {
+                state
+            }
+        }
+    }
+
+    fun setPrimaryProfilePhoto(index: Int) {
+        _uiState.update { state ->
+            if (index in state.currentUser.photoUris.indices) {
+                val updatedUser = state.currentUser.copy(selectedPhotoIndex = index)
+                state.copy(currentUser = updatedUser)
+            } else {
+                state
+            }
+        }
+    }
+
+    // Photo Verification Management (Selfie Verification)
+    fun submitSelfieVerification(selfieUri: String?) {
+        val newReq = PhotoVerificationRequest(
+            id = "req_${System.currentTimeMillis()}",
+            userId = _uiState.value.currentUser.phoneNumber,
+            userName = _uiState.value.currentUser.name,
+            userAvatarRes = com.example.R.drawable.profile_sarah,
+            userPhotoUri = _uiState.value.currentUser.photoUris.firstOrNull(),
+            selfiePhotoUri = selfieUri,
+            timestamp = "الآن",
+            status = "PENDING"
+        )
+        _uiState.update { state ->
+            val updatedList = listOf(newReq) + state.verificationRequests
+            val updatedUser = state.currentUser.copy(
+                selfieVerificationStatus = "PENDING",
+                selfieUri = selfieUri
+            )
+            state.copy(
+                verificationRequests = updatedList,
+                currentUser = updatedUser,
+                currentScreen = ScreenState.Main
+            )
+        }
+        showTopNotification(
+            iconEmoji = "📷",
+            title = "تم إرسال سلفي التوثيق للمراجعة الإدارية بنجاح ✓",
+            message = "سيتم تدقيق الصورة واعتماد شارة التوثيق الذهبية قريباً"
+        )
+    }
+
+    fun adminApproveVerification(requestId: String) {
+        _uiState.update { state ->
+            val updatedRequests = state.verificationRequests.map {
+                if (it.id == requestId) it.copy(status = "APPROVED") else it
+            }
+            val targetReq = state.verificationRequests.find { it.id == requestId }
+            val updatedUser = if (targetReq != null && (targetReq.userId == state.currentUser.phoneNumber || targetReq.userId == "user_sarah")) {
+                state.currentUser.copy(isVerified = true, selfieVerificationStatus = "VERIFIED")
+            } else state.currentUser
+
+            state.copy(
+                verificationRequests = updatedRequests,
+                currentUser = updatedUser
+            )
+        }
+        showTopNotification(
+            iconEmoji = "✓",
+            title = "تمت الموافقة على توثيق الحساب واعتماد الشارة الذهبية!"
+        )
+    }
+
+    fun adminRejectVerification(requestId: String, reason: String = "عدم وضوح ملامح الوجه أو عدم مطابقة الصورة") {
+        _uiState.update { state ->
+            val updatedRequests = state.verificationRequests.map {
+                if (it.id == requestId) it.copy(status = "REJECTED", rejectionReason = reason) else it
+            }
+            val targetReq = state.verificationRequests.find { it.id == requestId }
+            val updatedUser = if (targetReq != null && (targetReq.userId == state.currentUser.phoneNumber || targetReq.userId == "user_sarah")) {
+                state.currentUser.copy(selfieVerificationStatus = "REJECTED")
+            } else state.currentUser
+
+            state.copy(
+                verificationRequests = updatedRequests,
+                currentUser = updatedUser
+            )
+        }
+        showTopNotification(
+            iconEmoji = "⚠️",
+            title = "تم رفض طلب التوثيق",
+            message = reason
+        )
+    }
+
+    // Payment and Pricing Management
+    fun recordTransaction(
+        planId: String,
+        planTitle: String,
+        price: String,
+        paymentMethod: String
+    ) {
+        val tx = TransactionRecord(
+            id = "TXN-${System.currentTimeMillis().toString().takeLast(6)}",
+            userId = _uiState.value.currentUser.phoneNumber,
+            userName = _uiState.value.currentUser.name,
+            planId = planId,
+            planTitle = planTitle,
+            amount = price,
+            currency = _uiState.value.appSettings.appCurrency,
+            paymentMethod = paymentMethod,
+            timestamp = "الآن",
+            status = "COMPLETED"
+        )
+        _uiState.update { state ->
+            val isFullBundle = planId == "BUNDLE"
+            val updatedBoosts = if (isFullBundle) state.currentUser.boostsRemaining + 10 else state.currentUser.boostsRemaining
+            val updatedRoses = if (isFullBundle) state.currentUser.rosesBalance + 50 else state.currentUser.rosesBalance
+            val updatedChats = if (isFullBundle) 999 else state.currentUser.instantChatsRemaining
+
+            state.copy(
+                transactions = listOf(tx) + state.transactions,
+                currentUser = state.currentUser.copy(
+                    isGoldMember = true,
+                    isVip = true,
+                    subscriptionPlan = planId,
+                    subscriptionPrice = price,
+                    boostsRemaining = updatedBoosts,
+                    rosesBalance = updatedRoses,
+                    instantChatsRemaining = updatedChats
+                )
+            )
+        }
+    }
+
+    fun updatePlanPrices(weekly: Double, monthly: Double, annual: Double, bundle: Double) {
+        _uiState.update { state ->
+            val updated = state.appSettings.copy(
+                weeklyPrice = weekly,
+                monthlyPrice = monthly,
+                annualPrice = annual,
+                bundlePrice = bundle
+            )
+            state.copy(appSettings = updated)
+        }
+        showTopNotification(
+            iconEmoji = "💳",
+            title = "تم تحديث أسعار الاشتراكات وتطبيقها على المتجر بنجاح"
+        )
+    }
+
+    // Chat Extra Features
+    fun blockCandidate(candidateId: String) {
+        viewModelScope.launch {
+            candidateDao.toggleBan(candidateId)
+            _uiState.update { state ->
+                val updated = state.candidates.filterNot { it.id == candidateId }
+                state.copy(
+                    candidates = updated,
+                    filteredCandidates = applyFilters(updated, state.filters),
+                    currentScreen = ScreenState.Main
+                )
+            }
+            showTopNotification(
+                iconEmoji = "🚫",
+                title = "تم حظر المستخدم بنجاح ولن يظهر لك مجدداً"
+            )
+        }
+    }
+
+    fun reportCandidate(reporterName: String, candidateId: String, candidateName: String, reason: String) {
+        val rep = AdminReport(
+            id = "rep_${System.currentTimeMillis()}",
+            reporterName = reporterName,
+            reportedUserId = candidateId,
+            reportedUserName = candidateName,
+            reason = reason,
+            timestamp = "الآن",
+            status = "PENDING"
+        )
+        _uiState.update { state ->
+            state.copy(reports = listOf(rep) + state.reports)
+        }
+        showTopNotification(
+            iconEmoji = "🛡️",
+            title = "تم رفع البلاغ إلى المشرفين الشرعيين للمراجعة"
+        )
+    }
+
+    fun revealPhotoToUser(candidateId: String) {
+        _uiState.update { state ->
+            val revealed = state.currentUser.revealedPhotoUserIds + candidateId
+            state.copy(currentUser = state.currentUser.copy(revealedPhotoUserIds = revealed))
+        }
+        showTopNotification(
+            iconEmoji = "🔓",
+            title = "تم منح الإذن للطرف الآخر برؤية صورك الخاصة بنجاح"
+        )
+    }
+
+    fun sendCallInvitation(candidate: CandidateProfile, isVideo: Boolean) {
+        showTopNotification(
+            iconEmoji = if (isVideo) "📹" else "📞",
+            title = if (_uiState.value.language == AppLanguage.ARABIC)
+                "تم إرسال دعوة مكالمة شرعية إلى ${candidate.name}"
+            else
+                "Call invitation sent to ${candidate.nameEn}",
+            message = "بانتظار قبول الطرف الآخر لبدء الاتصال الشرعي"
+        )
+    }
+
+    fun dismissRocketTakeoffOverlay() {
+        _uiState.update { it.copy(showRocketTakeoffOverlay = false) }
+    }
+
+    fun triggerRoseShower() {
+        _uiState.update { it.copy(showRoseShowerOverlay = true) }
+    }
+
+    fun dismissRoseShower() {
+        _uiState.update { it.copy(showRoseShowerOverlay = false) }
     }
 }

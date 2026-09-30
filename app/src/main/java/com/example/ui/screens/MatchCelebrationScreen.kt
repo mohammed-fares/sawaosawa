@@ -64,6 +64,7 @@ import com.example.model.CandidateProfile
 import com.example.ui.theme.MuzzPink
 import com.example.ui.theme.PetroleumGreen
 import com.example.ui.theme.RadiantGold
+import com.example.ui.components.GoldSparkleShowerOverlay
 
 @Composable
 fun MatchCelebrationScreen(
@@ -101,6 +102,9 @@ fun MatchCelebrationScreen(
                 )
             )
     ) {
+        // Luxury golden sparkles showered across match photos
+        GoldSparkleShowerOverlay(visible = true)
+
         // Top close and logo
         Row(
             modifier = Modifier

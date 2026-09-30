@@ -65,6 +65,7 @@ fun DiscoveryScreen(
     language: AppLanguage,
     boostActive: Boolean,
     boostsCount: Int,
+    logoStyle: String = "COMBINED",
     onFilterClick: () -> Unit,
     onBoostClick: () -> Unit,
     onGoldClick: () -> Unit,
@@ -89,16 +90,6 @@ fun DiscoveryScreen(
         )
     }
 
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(boostActive) {
-        if (boostActive) {
-            snackbarHostState.showSnackbar(
-                if (isArabic) "🚀 تم تفعيل تعزيز سوا سوا الذهبي! ملفك يظهر للجميع أولاً" else "🚀 Sawa Sawa Gold Boost active! Your profile is prioritized"
-            )
-        }
-    }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -111,7 +102,8 @@ fun DiscoveryScreen(
             onBoostClick = onBoostClick,
             onGoldClick = onGoldClick,
             boostActive = boostActive,
-            boostsCount = boostsCount
+            boostsCount = boostsCount,
+            logoStyle = logoStyle
         )
 
         // Main Card / Empty State Area
@@ -159,8 +151,6 @@ fun DiscoveryScreen(
             visible = showRoseShower,
             onFinished = { showRoseShower = false }
         )
-
-        SnackbarHost(hostState = snackbarHostState)
     }
 
     // Instant Chat Dialog

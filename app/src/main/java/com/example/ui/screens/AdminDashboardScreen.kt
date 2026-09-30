@@ -95,6 +95,8 @@ import com.example.model.AdminBroadcast
 import com.example.model.AdminReport
 import com.example.model.AppLanguage
 import com.example.model.CandidateProfile
+import com.example.model.PhotoVerificationRequest
+import androidx.compose.runtime.mutableDoubleStateOf
 import com.example.ui.theme.GoldShineBrush
 import com.example.ui.theme.MuzzPink
 import com.example.ui.theme.PetroleumGreen
@@ -104,10 +106,14 @@ import com.example.ui.theme.RadiantGold
 import com.example.ui.theme.RadiantGoldContainer
 import com.example.ui.theme.RadiantGoldDark
 
+import com.example.model.AppGlobalSettings
+
 @Composable
 fun AdminDashboardScreen(
     candidates: List<CandidateProfile>,
     language: AppLanguage,
+    appSettings: AppGlobalSettings = AppGlobalSettings(),
+    verificationRequests: List<PhotoVerificationRequest> = emptyList(),
     onBack: () -> Unit,
     onToggleVerify: (String) -> Unit,
     onToggleGold: (String) -> Unit,
@@ -115,6 +121,13 @@ fun AdminDashboardScreen(
     onToggleBlur: (String) -> Unit,
     onAddCandidate: (CandidateProfile) -> Unit,
     onSendBroadcast: (String, String) -> Unit,
+    onApproveVerification: (String) -> Unit = {},
+    onRejectVerification: (String, String) -> Unit = { _, _ -> },
+    onUpdateSubscriptionPrices: (Double, Double, Double, Double) -> Unit = { _, _, _, _ -> },
+    onUpdateCurrency: (String, String) -> Unit = { _, _ -> },
+    onUpdateLogoStyle: (String) -> Unit = {},
+    onUpdateColorPalette: (Long, Long) -> Unit = { _, _ -> },
+    onUpdateRosesThreshold: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isArabic = language == AppLanguage.ARABIC
@@ -122,13 +135,21 @@ fun AdminDashboardScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedGenderFilter by remember { mutableStateOf("ALL") }
 
-    // Customization & Settings State
-    var selectedCurrency by remember { mutableStateOf("EGP") } // EGP, USD, SAR, AED
-    var isDiscreetNotificationsEnabled by remember { mutableStateOf(true) }
-    var selectedLogoStyle by remember { mutableStateOf("COMBINED") } // "TYPOGRAPHY", "EMBLEM", "COMBINED"
+    // Pricing State
+    var weeklyPriceState by remember { mutableDoubleStateOf(appSettings.weeklyPrice) }
+    var monthlyPriceState by remember { mutableDoubleStateOf(appSettings.monthlyPrice) }
+    var annualPriceState by remember { mutableDoubleStateOf(appSettings.annualPrice) }
+    var bundlePriceState by remember { mutableDoubleStateOf(appSettings.bundlePrice) }
+    var pricesSavedToast by remember { mutableStateOf(false) }
+
+    // Customization & Settings State linked to global settings
+    var selectedCurrency by remember { mutableStateOf(appSettings.appCurrency) } // EGP, USD, SAR, AED
+    var isDiscreetNotificationsEnabled by remember { mutableStateOf(appSettings.discreteNotifications) }
+    var selectedLogoStyle by remember { mutableStateOf(appSettings.logoStyle) } // "TYPOGRAPHY", "EMBLEM", "COMBINED"
     var selectedColorPalette by remember { mutableStateOf("PETROLEUM_GOLD") } // "PETROLEUM_GOLD", "ROYAL_NAVY", "ISLAMIC_EMERALD", "DESERT_ROSE"
-    var rosesThresholdForRenewal by remember { mutableIntStateOf(50) }
+    var rosesThresholdForRenewal by remember { mutableIntStateOf(appSettings.rosesToRenewSubscription) }
     var notificationTestSentToast by remember { mutableStateOf(false) }
+    var settingsSavedToast by remember { mutableStateOf(false) }
 
     // Dialogs
     var showAddMemberDialog by remember { mutableStateOf(false) }
@@ -224,10 +245,25 @@ fun AdminDashboardScreen(
             }
 
             // Scrollable Admin Tabs Row
+            val pendingVerificationCount = verificationRequests.count { it.status == "PENDING" }
             val tabs = if (isArabic) {
-                listOf("📊 الإحصائيات", "👥 إدارة الأعضاء", "🛡️ الرقابة والضوابط", "💳 الاشتراكات والأسعار", "⚙️ تخصيص التطبيق والعملة")
+                listOf(
+                    "📊 الإحصائيات",
+                    if (pendingVerificationCount > 0) "📸 توثيق الصور ($pendingVerificationCount)" else "📸 توثيق الصور",
+                    "👥 إدارة الأعضاء",
+                    "🛡️ الرقابة والضوابط",
+                    "💳 الاشتراكات والأسعار",
+                    "⚙️ تخصيص التطبيق والعملة"
+                )
             } else {
-                listOf("📊 Overview", "👥 Members", "🛡️ Moderation", "💳 Subscriptions", "⚙️ Customization")
+                listOf(
+                    "📊 Overview",
+                    if (pendingVerificationCount > 0) "📸 Verification ($pendingVerificationCount)" else "📸 Verification",
+                    "👥 Members",
+                    "🛡️ Moderation",
+                    "💳 Subscriptions",
+                    "⚙️ Customization"
+                )
             }
 
             ScrollableTabRow(
@@ -367,7 +403,193 @@ fun AdminDashboardScreen(
                 }
 
                 1 -> {
-                    // TAB 2: MEMBERS MANAGEMENT (ذكور وإناث، حظر، توثيق، ترقية)
+                    // TAB 2: PHOTO & ACCOUNT VERIFICATION (توثيق الصور واعتماد الحسابات)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = if (isArabic) "توثيق الصور الشخصية والحسابات 📸" else "Photo & Selfie Verification 📸",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PetroleumGreenDark
+                                )
+                                Text(
+                                    text = if (isArabic) "مراجعة وتدقيق السلفي والاعتماد الرسمي للعلامة الزرقاء والذهبية" else "Review selfies & grant verified badges",
+                                    fontSize = 11.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        if (verificationRequests.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = PetroleumGreen, modifier = Modifier.size(48.dp))
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = if (isArabic) "لا توجد طلبات توثيق صور معلقة حالياً ✓" else "No pending verification requests ✓",
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(verificationRequests) { req ->
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                    ) {
+                                        Column(modifier = Modifier.padding(14.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Image(
+                                                        painter = painterResource(id = req.userAvatarRes),
+                                                        contentDescription = null,
+                                                        modifier = Modifier
+                                                            .size(44.dp)
+                                                            .clip(CircleShape)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(10.dp))
+                                                    Column {
+                                                        Text(text = req.userName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                                        Text(text = "رقم المعرف: ${req.userId} • ${req.timestamp}", fontSize = 11.sp, color = Color.Gray)
+                                                    }
+                                                }
+
+                                                // Status Badge
+                                                val statusColor = when (req.status) {
+                                                    "APPROVED" -> Color(0xFF2E7D32)
+                                                    "REJECTED" -> Color(0xFFC62828)
+                                                    else -> RadiantGoldDark
+                                                }
+                                                val statusText = when (req.status) {
+                                                    "APPROVED" -> if (isArabic) "معتمد وموثق ✓" else "Approved ✓"
+                                                    "REJECTED" -> if (isArabic) "مرفوض ✕" else "Rejected ✕"
+                                                    else -> if (isArabic) "قيد المراجعة ⏳" else "Pending ⏳"
+                                                }
+                                                Box(
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(10.dp))
+                                                        .background(statusColor.copy(alpha = 0.15f))
+                                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                ) {
+                                                    Text(text = statusText, color = statusColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.height(12.dp))
+
+                                            // Comparison Preview: Profile photo vs Selfie
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Text(text = "صورة الحساب الأصلية", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .height(110.dp)
+                                                            .clip(RoundedCornerShape(12.dp))
+                                                    ) {
+                                                        Image(
+                                                            painter = painterResource(id = req.userAvatarRes),
+                                                            contentDescription = "Original Profile Photo",
+                                                            contentScale = ContentScale.Crop,
+                                                            modifier = Modifier.fillMaxSize()
+                                                        )
+                                                    }
+                                                }
+
+                                                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Text(text = "صورة السلفي الملتقطة", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PetroleumGreen)
+                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .height(110.dp)
+                                                            .clip(RoundedCornerShape(12.dp))
+                                                            .border(1.5.dp, RadiantGold, RoundedCornerShape(12.dp))
+                                                    ) {
+                                                        Image(
+                                                            painter = painterResource(id = req.userAvatarRes),
+                                                            contentDescription = "Verification Selfie",
+                                                            contentScale = ContentScale.Crop,
+                                                            modifier = Modifier.fillMaxSize()
+                                                        )
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .align(Alignment.BottomCenter)
+                                                                .fillMaxWidth()
+                                                                .background(Color.Black.copy(alpha = 0.6f))
+                                                                .padding(2.dp),
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Text(text = "سلفي حي بالكاميرا", fontSize = 9.sp, color = Color.White)
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            if (req.status == "PENDING") {
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                ) {
+                                                    Button(
+                                                        onClick = { onApproveVerification(req.id) },
+                                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        modifier = Modifier.weight(1f)
+                                                    ) {
+                                                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        Text(text = if (isArabic) "اعتماد التوثيق ✓" else "Approve ✓", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                                    }
+
+                                                    Button(
+                                                        onClick = { onRejectVerification(req.id, "عدم تطابق ملامح الوجه أو عدم وضوح الصورة") },
+                                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828)),
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        modifier = Modifier.weight(1f)
+                                                    ) {
+                                                        Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        Text(text = if (isArabic) "رفض الطلب" else "Reject", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                2 -> {
+                    // TAB 3: MEMBERS MANAGEMENT (ذكور وإناث، حظر، توثيق، ترقية)
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -454,8 +676,8 @@ fun AdminDashboardScreen(
                     }
                 }
 
-                2 -> {
-                    // TAB 3: CONTENT MODERATION & REPORTS
+                3 -> {
+                    // TAB 4: CONTENT MODERATION & REPORTS
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -544,8 +766,8 @@ fun AdminDashboardScreen(
                     }
                 }
 
-                3 -> {
-                    // TAB 4: SUBSCRIPTIONS & PRICING MANAGEMENT
+                4 -> {
+                    // TAB 5: SUBSCRIPTIONS & PRICING MANAGEMENT (تحديد أسعار الاشتراكات)
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -554,29 +776,87 @@ fun AdminDashboardScreen(
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         Text(
-                            text = if (isArabic) "إدارة أسعار باقات سوا سوا GOLD 💳" else "Subscription Plans & Pricing 💳",
+                            text = if (isArabic) "إدارة وتحديد أسعار باقات سوا سوا GOLD 💳" else "Subscription Plans & Pricing 💳",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = PetroleumGreen
                         )
 
-                        PriceEditorCard(
-                            planName = if (isArabic) "الباقة الأسبوعية" else "Weekly Plan",
-                            currentPrice = "39.99 ر.س",
+                        Text(
+                            text = if (isArabic)
+                                "يمكنك تعديل الأسعار وتطبيقها فوراً على متجر التطبيق لجميع المستخدمين:"
+                            else
+                                "Configure subscription prices and immediately apply them to the store:",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+
+                        // Editable Weekly Plan Card
+                        EditablePriceCard(
+                            planName = if (isArabic) "الباقة الأسبوعية المرنة" else "Flexible Weekly Plan",
+                            currencySymbol = appSettings.appCurrencySymbol,
+                            price = weeklyPriceState,
+                            onPriceChanged = { weeklyPriceState = it },
                             activeSubscribers = "142 مشترك"
                         )
 
-                        PriceEditorCard(
-                            planName = if (isArabic) "الباقة الشهرية (الأكثر طلباً)" else "Monthly Plan",
-                            currentPrice = "99.99 ر.س",
+                        // Editable Monthly Plan Card
+                        EditablePriceCard(
+                            planName = if (isArabic) "الباقة الشهرية المميزة (الأكثر طلباً)" else "Premium Monthly Plan",
+                            currencySymbol = appSettings.appCurrencySymbol,
+                            price = monthlyPriceState,
+                            onPriceChanged = { monthlyPriceState = it },
                             activeSubscribers = "196 مشترك"
                         )
 
-                        PriceEditorCard(
-                            planName = if (isArabic) "الباقة السنوية" else "Annual Plan",
-                            currentPrice = "599.99 ر.س",
+                        // Editable Annual Plan Card
+                        EditablePriceCard(
+                            planName = if (isArabic) "الباقة السنوية الملكية" else "Regal Annual Plan",
+                            currencySymbol = appSettings.appCurrencySymbol,
+                            price = annualPriceState,
+                            onPriceChanged = { annualPriceState = it },
                             activeSubscribers = "46 مشترك"
                         )
+
+                        // Editable Full Bundle Card
+                        EditablePriceCard(
+                            planName = if (isArabic) "الباقة الشاملة VIP الكاملة" else "Full VIP Bundle",
+                            currencySymbol = appSettings.appCurrencySymbol,
+                            price = bundlePriceState,
+                            onPriceChanged = { bundlePriceState = it },
+                            activeSubscribers = "89 مشترك"
+                        )
+
+                        // Save Button
+                        Button(
+                            onClick = {
+                                onUpdateSubscriptionPrices(weeklyPriceState, monthlyPriceState, annualPriceState, bundlePriceState)
+                                pricesSavedToast = true
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            shape = RoundedCornerShape(25.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PetroleumGreen)
+                        ) {
+                            Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = RadiantGold)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (isArabic) "حفظ وتطبيق أسعار الاشتراكات على المتجر 💾" else "Save & Apply Store Prices 💾",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
+
+                        if (pricesSavedToast) {
+                            Text(
+                                text = if (isArabic) "✓ تم حفظ وتحديث الأسعار على المتجر بنجاح!" else "✓ Prices successfully updated on store!",
+                                color = Color(0xFF2E7D32),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+                        }
 
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -607,8 +887,8 @@ fun AdminDashboardScreen(
                     }
                 }
 
-                4 -> {
-                    // TAB 5: APP CUSTOMIZATION, CURRENCY, DISCREET NOTIFICATIONS, LOGO & COLORS
+                5 -> {
+                    // TAB 6: APP CUSTOMIZATION, CURRENCY, DISCREET NOTIFICATIONS, LOGO & COLORS
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -1014,6 +1294,53 @@ fun AdminDashboardScreen(
                                     }
                                 }
                             }
+                        // Save & Apply All Global Settings Button
+                        Button(
+                            onClick = {
+                                val symbol = when (selectedCurrency) {
+                                    "USD" -> "$"
+                                    "SAR" -> "ر.س"
+                                    "AED" -> "د.إ"
+                                    else -> "ج.م"
+                                }
+                                onUpdateCurrency(selectedCurrency, symbol)
+                                onUpdateLogoStyle(selectedLogoStyle)
+                                onUpdateRosesThreshold(rosesThresholdForRenewal)
+
+                                val (primary, gold) = when (selectedColorPalette) {
+                                    "ROYAL_NAVY" -> Pair(0xFF0D1B2AL, 0xFFE5A93BL)
+                                    "ISLAMIC_EMERALD" -> Pair(0xFF1B4332L, 0xFFD4A373L)
+                                    "DESERT_ROSE" -> Pair(0xFF5A189AL, 0xFFE0AAFFL)
+                                    else -> Pair(0xFF0F4C47L, 0xFFD4AF37L)
+                                }
+                                onUpdateColorPalette(primary, gold)
+                                settingsSavedToast = true
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = PetroleumGreen),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color.White)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (isArabic) "حفظ وتطبيق جميع الإعدادات فوراً ✓" else "Save & Apply All Settings",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+
+                        if (settingsSavedToast) {
+                            Text(
+                                text = if (isArabic) "✓ تم حفظ وتحديث العملة واللوجو وألوان التطبيق بنجاح!" else "✓ Settings applied successfully across the app!",
+                                fontSize = 12.sp,
+                                color = PetroleumGreen,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(20.dp))
@@ -1192,6 +1519,7 @@ fun AdminDashboardScreen(
             }
         )
     }
+}
 }
 
 @Composable

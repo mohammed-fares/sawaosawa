@@ -38,6 +38,9 @@ interface CandidateDao {
     @Query("UPDATE candidates SET isPhotoBlurred = NOT isPhotoBlurred WHERE id = :id")
     suspend fun toggleBlur(id: String)
 
+    @Query("UPDATE candidates SET isBanned = NOT isBanned WHERE id = :id")
+    suspend fun toggleBan(id: String)
+
     @Query("UPDATE candidates SET rosesReceivedCount = rosesReceivedCount + 1 WHERE id = :id")
     suspend fun incrementRoses(id: String)
 

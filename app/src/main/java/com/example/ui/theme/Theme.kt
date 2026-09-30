@@ -49,23 +49,37 @@ private val LightColorScheme =
 
 @Composable
 fun SawaSawaTheme(
-  darkTheme: Boolean = isSystemInDarkTheme(),
-  dynamicColor: Boolean = false,
-  content: @Composable () -> Unit,
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
+    customPrimaryColor: Color? = null,
+    customGoldColor: Color? = null,
+    content: @Composable () -> Unit,
 ) {
-  val colorScheme =
-    when {
-      dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-        val context = LocalContext.current
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-      }
-      darkTheme -> DarkColorScheme
-      else -> LightColorScheme
+    val baseScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
     }
 
-  MaterialTheme(
-    colorScheme = colorScheme,
-    typography = Typography,
-    content = content
-  )
+    val finalScheme = if (customPrimaryColor != null || customGoldColor != null) {
+        val primary = customPrimaryColor ?: baseScheme.primary
+        val secondary = customGoldColor ?: baseScheme.secondary
+        baseScheme.copy(
+            primary = primary,
+            secondary = secondary,
+            primaryContainer = primary.copy(alpha = 0.15f),
+            secondaryContainer = secondary.copy(alpha = 0.15f)
+        )
+    } else {
+        baseScheme
+    }
+
+    MaterialTheme(
+        colorScheme = finalScheme,
+        typography = Typography,
+        content = content
+    )
 }

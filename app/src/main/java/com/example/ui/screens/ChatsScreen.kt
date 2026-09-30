@@ -52,12 +52,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.model.AppLanguage
 import com.example.model.CandidateProfile
-import com.example.ui.theme.MuzzPink
-import com.example.ui.theme.PetroleumGreen
-import com.example.ui.theme.PetroleumGreenContainer
-import com.example.ui.theme.PetroleumGreenDark
-import com.example.ui.theme.RadiantGold
-import com.example.ui.theme.RadiantGoldContainer
+import com.example.ui.theme.*
 import com.example.ui.components.VipBadgeOverlay
 
 @Composable
@@ -121,7 +116,7 @@ fun ChatsScreen(
                 }
             }
 
-            // Halal Serious Marriage 5-chats limit banner (مطابقة لصورة 2.webp)
+            // Halal Serious Marriage 5-chats limit banner
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -129,29 +124,111 @@ fun ChatsScreen(
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = if (isArabic) "المحادثات النشطة (3/5)" else "Active Chats (3/5)",
-                            fontSize = 14.sp,
+                            text = if (isArabic) "المحادثات النشطة (${candidatesToShow.take(3).size}/5) 🔒" else "Active Chats (${candidatesToShow.take(3).size}/5) 🔒",
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = PetroleumGreen
                         )
+                        Text(
+                            text = if (isArabic) "محادثة جادة وهادفة" else "Serious & Halal",
+                            fontSize = 10.sp,
+                            color = RadiantGoldDark,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = if (isArabic)
-                            "يتم إضافة توافقاتك إلى محادثاتك عندما يرسل كل منكما رسالة إلى الآخر. يمكنك التحدث إلى 5 أشخاص فقط في وقت واحد لضمان الجدية التامة."
+                            "تحدث إلى 5 أشخاص فقط في وقت واحد لضمان الجدية والتركيز التام على الزواج الحلال."
                         else
-                            "Chats are added when both send a message. You can chat with up to 5 people at a time to ensure halal focus.",
+                            "Chat with up to 5 people at once to ensure seriousness and focus on halal marriage.",
                         fontSize = 11.sp,
                         color = Color.Gray,
-                        lineHeight = 16.sp
+                        lineHeight = 15.sp
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
+
+            // New Matches Horizontal Carousel ("توافقات جديدة")
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Text(
+                    text = if (isArabic) "توافقات جديدة ✨" else "New Matches ✨",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                )
+
+                androidx.compose.foundation.lazy.LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    items(allCandidates) { candidate ->
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clickable { onOpenChat(candidate) }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Box(modifier = Modifier.size(56.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                        .border(2.dp, RadiantGold, CircleShape)
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = candidate.photoRes),
+                                        contentDescription = candidate.name,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+
+                                if (candidate.isVip) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(RadiantGold)
+                                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                                    ) {
+                                        Text("VIP", fontSize = 8.sp, fontWeight = FontWeight.Black, color = Color.Black)
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (isArabic) candidate.name else candidate.nameEn,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Conversations List Header
+            Text(
+                text = if (isArabic) "المحادثات الجارية" else "Recent Conversations",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+            )
 
             // Conversations List
             LazyColumn(
@@ -262,9 +339,9 @@ fun ConversationItemView(
             ) {
                 Text(
                     text = if (isArabic)
-                        "السلام عليكم Sara، عيدك مبارك يا سارة!"
+                        "السلام عليكم ${candidate.name}، كيف حالك؟ مبارك التوافق الحلال!"
                     else
-                        "As-salamu alaykum Sara, Eid Mubarak!",
+                        "As-salamu alaykum ${candidate.nameEn}, how are you?",
                     fontSize = 13.sp,
                     color = Color.DarkGray,
                     maxLines = 1,

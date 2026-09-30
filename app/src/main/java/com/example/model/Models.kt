@@ -124,7 +124,36 @@ data class CurrentUserProfile(
     val rosesBalance: Int = 38, // Virtual roses received by female user
     val rosesRequiredForRenewal: Int = 50,
     val photoUris: List<String> = emptyList(), // Up to 3 user photos
-    val selectedPhotoIndex: Int = 0 // Which photo is primary
+    val selectedPhotoIndex: Int = 0, // Which photo is primary
+    val selfieVerificationStatus: String = "VERIFIED", // "NONE", "PENDING", "VERIFIED", "REJECTED"
+    val selfieUri: String? = null,
+    val revealedPhotoUserIds: Set<String> = emptySet(),
+    val likedCandidateIds: Set<String> = emptySet()
+)
+
+data class PhotoVerificationRequest(
+    val id: String,
+    val userId: String,
+    val userName: String,
+    val userAvatarRes: Int = com.example.R.drawable.profile_sarah,
+    val userPhotoUri: String? = null,
+    val selfiePhotoUri: String? = null,
+    val timestamp: String = "منذ 10 دقائق",
+    val status: String = "PENDING", // PENDING, APPROVED, REJECTED
+    val rejectionReason: String? = null
+)
+
+data class TransactionRecord(
+    val id: String,
+    val userId: String,
+    val userName: String,
+    val planId: String,
+    val planTitle: String,
+    val amount: String,
+    val currency: String,
+    val paymentMethod: String, // VODAFONE_CASH, FAWRY, APPLE_PAY, MADA, CREDIT_CARD
+    val timestamp: String,
+    val status: String = "COMPLETED" // COMPLETED, PENDING, FAILED
 )
 
 data class VirtualRose(
@@ -144,7 +173,11 @@ data class AppGlobalSettings(
     val goldColorHex: Long = 0xFFD4AF37,    // Radiant Gold
     val logoStyle: String = "COMBINED",     // "EMBLEM", "TYPOGRAPHY", "COMBINED"
     val discreteNotifications: Boolean = true,
-    val rosesToRenewSubscription: Int = 50
+    val rosesToRenewSubscription: Int = 50,
+    val weeklyPrice: Double = 79.0,
+    val monthlyPrice: Double = 199.0,
+    val annualPrice: Double = 899.0,
+    val bundlePrice: Double = 349.0
 )
 
 data class SubscriptionPlan(

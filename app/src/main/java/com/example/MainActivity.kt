@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -19,8 +20,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import com.example.ui.components.TopNotificationHud
 import com.example.model.AppLanguage
 import com.example.model.MainNavigationTab
 import com.example.ui.components.SawaBottomNavBar
@@ -59,13 +62,21 @@ class MainActivity : ComponentActivity() {
             val layoutDirection = if (isArabic) LayoutDirection.Rtl else LayoutDirection.Ltr
 
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                SawaSawaTheme {
+                SawaSawaTheme(
+                    customPrimaryColor = Color(uiState.appSettings.primaryColorHex),
+                    customGoldColor = Color(uiState.appSettings.goldColorHex)
+                ) {
                     val scope = rememberCoroutineScope()
                     val snackbarHostState = remember { SnackbarHostState() }
 
                     LaunchedEffect(uiState.adminBroadcastSentToast) {
                         uiState.adminBroadcastSentToast?.let {
-                            snackbarHostState.showSnackbar("📢 إشعار عام: $it")
+                            viewModel.showTopNotification(
+                                iconEmoji = "📢",
+                                title = if (isArabic) "إشعار إداري عام" else "Admin Broadcast",
+                                message = it,
+                                durationMs = 4000L
+                            )
                         }
                     }
 
@@ -74,7 +85,8 @@ class MainActivity : ComponentActivity() {
                         viewModel.navigateBack()
                     }
 
-                    when (val screen = uiState.currentScreen) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        when (val screen = uiState.currentScreen) {
                         is ScreenState.Onboarding -> {
                             OnboardingScreen(
                                 language = uiState.language,
@@ -128,22 +140,25 @@ class MainActivity : ComponentActivity() {
                             SubscriptionScreen(
                                 user = uiState.currentUser,
                                 language = uiState.language,
+                                currencyCode = uiState.appSettings.appCurrency,
+                                currencySymbol = uiState.appSettings.appCurrencySymbol,
                                 onPlanPurchased = { planId, price ->
                                     viewModel.purchasePlan(planId, price)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            if (isArabic) "👑 مبروك! تم تفعيل اشتراك $price" else "👑 Subscribed to $price"
-                                        )
-                                    }
+                                    viewModel.showTopNotification(
+                                        iconEmoji = "👑",
+                                        title = if (isArabic) "تم تفعيل الاشتراك بنجاح!" else "Subscribed!",
+                                        message = price,
+                                        isGoldAlert = true
+                                    )
                                 },
                                 onRenewWithRoses = {
                                     val ok = viewModel.renewSubscriptionWithRoses()
-                                    scope.launch {
-                                        if (ok) {
-                                            snackbarHostState.showSnackbar(
-                                                if (isArabic) "🌹 مبروك! تم تجديد العضوية الذهبية بـ 50 باقة ورد بنجاح" else "🌹 Renewed VIP with roses!"
-                                            )
-                                        }
+                                    if (ok) {
+                                        viewModel.showTopNotification(
+                                            iconEmoji = "🌹",
+                                            title = if (isArabic) "تم تجديد اشتراك VIP بباقات الورد!" else "VIP renewed with roses!",
+                                            isGoldAlert = true
+                                        )
                                     }
                                 },
                                 onClose = { viewModel.closeSubscriptions() }
@@ -185,28 +200,55 @@ class MainActivity : ComponentActivity() {
                             AdminDashboardScreen(
                                 candidates = uiState.candidates,
                                 language = uiState.language,
+                                appSettings = uiState.appSettings,
                                 onBack = { viewModel.closeAdminDashboard() },
                                 onToggleVerify = { id -> viewModel.adminToggleVerify(id) },
                                 onToggleGold = { id -> viewModel.adminToggleGold(id) },
                                 onToggleBan = { id ->
                                     viewModel.adminToggleBan(id)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            if (isArabic) "تم تعديل حالة الحظر للعضو" else "Member ban status updated"
-                                        )
-                                    }
+                                    viewModel.showTopNotification(
+                                        iconEmoji = "🛡️",
+                                        title = if (isArabic) "تم تعديل حالة الحظر للعضو" else "Member ban status updated"
+                                    )
                                 },
                                 onToggleBlur = { id -> viewModel.adminToggleBlur(id) },
                                 onAddCandidate = { newCand ->
                                     viewModel.adminAddCandidate(newCand)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            if (isArabic) "تم إضافة العضو الجديد للمنصة بنجاح ✓" else "New member added ✓"
-                                        )
-                                    }
+                                    viewModel.showTopNotification(
+                                        iconEmoji = "✓",
+                                        title = if (isArabic) "تم إضافة العضو الجديد للمنصة بنجاح ✓" else "New member added ✓"
+                                    )
                                 },
                                 onSendBroadcast = { title, msg ->
                                     viewModel.adminSendBroadcast(title, msg)
+                                },
+                                onUpdateCurrency = { curr, sym ->
+                                    viewModel.updateCurrency(curr, sym)
+                                    viewModel.showTopNotification(
+                                        iconEmoji = "💱",
+                                        title = if (isArabic) "تم تغيير عملة التطبيق إلى $sym ($curr)" else "Currency updated to $curr"
+                                    )
+                                },
+                                onUpdateLogoStyle = { style ->
+                                    viewModel.updateLogoStyle(style)
+                                    viewModel.showTopNotification(
+                                        iconEmoji = "🎨",
+                                        title = if (isArabic) "تم تعديل شكل وهوية الشعار بنجاح" else "Logo style updated"
+                                    )
+                                },
+                                onUpdateColorPalette = { p, g ->
+                                    viewModel.updateThemeColors(p, g)
+                                    viewModel.showTopNotification(
+                                        iconEmoji = "✨",
+                                        title = if (isArabic) "تم تطبيق نظام الألوان الجديد بنجاح" else "New theme colors applied"
+                                    )
+                                },
+                                onUpdateRosesThreshold = { t ->
+                                    viewModel.updateRosesRenewalThreshold(t)
+                                    viewModel.showTopNotification(
+                                        iconEmoji = "🌹",
+                                        title = if (isArabic) "تم تحديد شرط تجديد العضوية بـ $t وردة" else "Renewal set to $t roses"
+                                    )
                                 }
                             )
                         }
@@ -265,11 +307,12 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onSendRose = {
                                     viewModel.sendRose(screen.candidate)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            if (isArabic) "🌹 أرسلت باقة ورد عطرة VIP إلى ${screen.candidate.name}" else "🌹 Sent VIP Rose to ${screen.candidate.name}"
-                                        )
-                                    }
+                                    viewModel.showTopNotification(
+                                        iconEmoji = "🌹",
+                                        title = if (isArabic) "أرسلت باقة ورد VIP" else "Sent VIP Rose",
+                                        message = if (isArabic) "تم إهداء باقة الورد إلى ${screen.candidate.name} بنجاح" else "Rose sent to ${screen.candidate.nameEn}",
+                                        isGoldAlert = true
+                                    )
                                 }
                             )
                         }
@@ -342,6 +385,7 @@ class MainActivity : ComponentActivity() {
                                             language = uiState.language,
                                             boostActive = uiState.boostActive,
                                             boostsCount = uiState.boostsRemaining,
+                                            logoStyle = uiState.appSettings.logoStyle,
                                             onFilterClick = { viewModel.openFilters() },
                                             onBoostClick = { viewModel.activateBoost() },
                                             onGoldClick = { viewModel.openGoldCenter() },
@@ -352,11 +396,12 @@ class MainActivity : ComponentActivity() {
                                             onLike = { viewModel.likeCurrentCandidate() },
                                             onSendRose = { candidate ->
                                                 viewModel.sendRose(candidate)
-                                                scope.launch {
-                                                    snackbarHostState.showSnackbar(
-                                                        if (isArabic) "🌹 أرسلت باقة ورد عطرة VIP إلى ${candidate.name}" else "🌹 Sent VIP Rose to ${candidate.name}"
-                                                    )
-                                                }
+                                                viewModel.showTopNotification(
+                                                    iconEmoji = "🌹",
+                                                    title = if (isArabic) "أرسلت باقة ورد VIP" else "Sent VIP Rose",
+                                                    message = if (isArabic) "تم إهداء الوردة إلى ${candidate.name} بنجاح" else "Rose sent to ${candidate.nameEn}",
+                                                    isGoldAlert = true
+                                                )
                                             },
                                             onResetDiscovery = { viewModel.resetDiscovery() },
                                             modifier = Modifier.padding(innerPadding)
@@ -417,11 +462,20 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                 }
-                            }
                         }
+
+                        // Floating In-App Top Notification HUD
+                        TopNotificationHud(
+                            notification = uiState.topNotification,
+                            onDismiss = { viewModel.dismissTopNotification() }
+                        )
                     }
                 }
             }
         }
     }
 }
+}
+}
+
+

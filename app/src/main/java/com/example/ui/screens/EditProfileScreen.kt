@@ -72,6 +72,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import com.example.util.SecureImagePickerHelper
 import com.example.R
 import com.example.model.AppLanguage
 import com.example.model.CurrentUserProfile
@@ -91,6 +93,7 @@ fun EditProfileScreen(
     modifier: Modifier = Modifier
 ) {
     val isArabic = language == AppLanguage.ARABIC
+    val context = LocalContext.current
 
     var name by remember { mutableStateOf(user.name) }
     var ageText by remember { mutableStateOf(user.age.toString()) }
@@ -133,9 +136,12 @@ fun EditProfileScreen(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null && userPhotos.size < 3) {
-            val updated = userPhotos.toMutableList()
-            updated.add(uri.toString())
-            userPhotos = updated
+            val localPath = SecureImagePickerHelper.saveGalleryUri(context, uri)
+            if (localPath != null) {
+                val updated = userPhotos.toMutableList()
+                updated.add(localPath)
+                userPhotos = updated
+            }
         }
     }
 
@@ -143,10 +149,12 @@ fun EditProfileScreen(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
         if (bitmap != null && userPhotos.size < 3) {
-            val updated = userPhotos.toMutableList()
-            // Tag with captured timestamp
-            updated.add("camera_captured_${System.currentTimeMillis()}")
-            userPhotos = updated
+            val localPath = SecureImagePickerHelper.saveCameraBitmap(context, bitmap)
+            if (localPath != null) {
+                val updated = userPhotos.toMutableList()
+                updated.add(localPath)
+                userPhotos = updated
+            }
         }
     }
 

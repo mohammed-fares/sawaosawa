@@ -273,82 +273,72 @@ fun CommunityScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Tabs Row: "الأقرب لك 📍" | "أعجب بك (64)" | "قام بزيارتك" | "المفضلة"
-            TabRow(
+            // Enhanced Spacious Sub-Tabs Row: "الأقرب إليك", "أعجب بك", "زار ملفك", "المفضلة"
+            androidx.compose.material3.ScrollableTabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.background,
+                containerColor = Color.Transparent,
                 contentColor = PetroleumGreen,
+                edgePadding = 14.dp,
+                divider = {},
                 indicator = { tabPositions ->
-                    TabRowDefaults.Indicator(
-                        Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = PetroleumGreen,
-                        height = 3.dp
-                    )
-                }
-            ) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    text = {
-                        Text(
-                            text = if (isArabic) "الأقرب لك 📍" else "Nearest 📍",
-                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 12.sp
+                    if (selectedTab in tabPositions.indices) {
+                        TabRowDefaults.Indicator(
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                            color = PetroleumGreen,
+                            height = 3.dp
                         )
                     }
+                }
+            ) {
+                val tabsList = listOf(
+                    Triple(if (isArabic) "الأقرب إليك" else "Nearest", "📍", null),
+                    Triple(if (isArabic) "أعجب بك" else "Liked You", "💖", "64"),
+                    Triple(if (isArabic) "زار ملفك" else "Visits", "👀", "18"),
+                    Triple(if (isArabic) "المفضلة" else "Favorites", "⭐", "5")
                 )
 
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                tabsList.forEachIndexed { index, (label, emoji, count) ->
+                    val isSelected = selectedTab == index
+                    Tab(
+                        selected = isSelected,
+                        onClick = { selectedTab = index },
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(if (isSelected) PetroleumGreenContainer else Color.Transparent)
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        ) {
+                            Text(text = emoji, fontSize = 13.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = if (isArabic) "أعجب بك" else "Liked You",
-                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 12.sp
+                                text = label,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 13.sp,
+                                color = if (isSelected) PetroleumGreenDark else Color.DarkGray
                             )
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(MuzzPink)
-                                    .padding(horizontal = 4.dp, vertical = 1.dp)
-                            ) {
-                                Text(
-                                    text = "64",
-                                    fontSize = 9.sp,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
+                            if (count != null) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (index == 1) MuzzPink else RadiantGold)
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = count,
+                                        fontSize = 10.sp,
+                                        color = if (index == 1) Color.White else PetroleumGreenDark,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                     }
-                )
-
-                Tab(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    text = {
-                        Text(
-                            text = if (isArabic) "زارك" else "Visits",
-                            fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 12.sp
-                        )
-                    }
-                )
-
-                Tab(
-                    selected = selectedTab == 3,
-                    onClick = { selectedTab = 3 },
-                    text = {
-                        Text(
-                            text = if (isArabic) "المفضلة" else "Favorites",
-                            fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 12.sp
-                        )
-                    }
-                )
+                }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -394,11 +384,11 @@ fun CandidateGridCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(230.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .height(245.dp)
+            .clip(RoundedCornerShape(20.dp))
             .clickable { onClick() }
-            .shadow(4.dp, RoundedCornerShape(18.dp)),
-        shape = RoundedCornerShape(18.dp)
+            .shadow(6.dp, RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Image(
@@ -408,19 +398,24 @@ fun CandidateGridCard(
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Dark gradient overlay
+            // Refined smooth gradient overlay that starts near the bottom
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
-                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.3f), Color.Black.copy(alpha = 0.90f)),
-                            startY = 130f
+                            listOf(
+                                Color.Transparent,
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.35f),
+                                Color.Black.copy(alpha = 0.88f)
+                            ),
+                            startY = 220f
                         )
                     )
             )
 
-            // Top Badges: Distance Pill & Favorite Heart
+            // Top Row: Clean Distance Pill on Start, VIP / Favorite on End
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -432,7 +427,7 @@ fun CandidateGridCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (isProximityTab) PetroleumGreenDark.copy(alpha = 0.9f) else Color.Black.copy(alpha = 0.65f))
+                        .background(if (isProximityTab) PetroleumGreenDark.copy(alpha = 0.85f) else Color.Black.copy(alpha = 0.6f))
                         .padding(horizontal = 7.dp, vertical = 3.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -445,7 +440,7 @@ fun CandidateGridCard(
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = if (distanceKm < 1f) {
-                                if (isArabic) "أقل من 1 كم" else "< 1 km"
+                                if (isArabic) "< 1 كم" else "< 1 km"
                             } else {
                                 if (isArabic) "${String.format("%.1f", distanceKm)} كم" else "${String.format("%.1f", distanceKm)} km"
                             },
@@ -456,83 +451,72 @@ fun CandidateGridCard(
                     }
                 }
 
-                // Heart / Match badge & VIP Overlay
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (candidate.isVip || candidate.isGoldMember) {
-                        VipBadgeOverlay(text = "VIP 👑")
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
+                // Top End: VIP badge if member, otherwise subtle favorite icon
+                if (candidate.isVip || candidate.isGoldMember) {
+                    VipBadgeOverlay(text = "VIP 👑")
+                } else {
                     Box(
                         modifier = Modifier
                             .size(26.dp)
-                            .background(MuzzPink, CircleShape),
+                            .background(Color.Black.copy(alpha = 0.45f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Favorite,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = MuzzPink,
                             modifier = Modifier.size(14.dp)
                         )
                     }
                 }
             }
 
-            // Bottom Info: Name, Age, Profession, City & Active Hours
+            // Bottom Info: Clean, well-spaced typography
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(10.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 10.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "${if (isArabic) candidate.name else candidate.nameEn}، ${candidate.age}",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    if (candidate.isVerified) {
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Icon(
-                            imageVector = Icons.Default.Verified,
-                            contentDescription = null,
-                            tint = RadiantGold,
-                            modifier = Modifier.size(14.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "${if (isArabic) candidate.name else candidate.nameEn}، ${candidate.age}",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
+                        if (candidate.isVerified) {
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Icon(
+                                imageVector = Icons.Default.Verified,
+                                contentDescription = null,
+                                tint = RadiantGold,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
+
+                    // Online indicator
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(if (candidate.isOnlineNow) Color(0xFF4CAF50) else Color.Gray, CircleShape)
+                    )
                 }
 
                 Text(
                     text = "${if (isArabic) candidate.profession else candidate.professionEn} • ${if (isArabic) candidate.city else candidate.cityEn}",
                     fontSize = 10.sp,
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = Color.White.copy(alpha = 0.90f),
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
-
-                Spacer(modifier = Modifier.height(3.dp))
-
-                // Active hours / Online indicator
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .background(if (candidate.isOnlineNow) Color(0xFF4CAF50) else Color.LightGray, CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (candidate.isOnlineNow) {
-                            if (isArabic) "متصل الآن" else "Online"
-                        } else {
-                            candidate.activeHours
-                        },
-                        fontSize = 9.sp,
-                        color = if (candidate.isOnlineNow) Color(0xFFA5D6A7) else Color.White.copy(alpha = 0.75f),
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
             }
         }
     }

@@ -91,6 +91,8 @@ data class PlanOption(
 fun SubscriptionScreen(
     user: CurrentUserProfile = CurrentUserProfile(),
     language: AppLanguage = AppLanguage.ARABIC,
+    currencyCode: String = "EGP",
+    currencySymbol: String = "ج.م",
     onPlanPurchased: (String, String) -> Unit,
     onRenewWithRoses: () -> Unit = {},
     onClose: () -> Unit,
@@ -99,7 +101,7 @@ fun SubscriptionScreen(
     val isArabic = language == AppLanguage.ARABIC
 
     // Location-based currency: Default to EGP for Egypt location, USD outside Egypt
-    val isEgyptDefault = user.locationCity.contains("مصر") ||
+    val isEgyptDefault = currencyCode == "EGP" || user.locationCity.contains("مصر") ||
             user.locationCity.contains("Egypt") ||
             user.locationCity.contains("القاهرة") ||
             (user.latitude in 22.0..32.0 && user.longitude in 24.0..37.0)
@@ -112,7 +114,7 @@ fun SubscriptionScreen(
             id = "WEEKLY",
             title = "اشتراك أسبوعي مرن",
             titleEn = "Flexible Weekly Plan",
-            priceEgp = "79 ج.م / أسبوع",
+            priceEgp = "79 $currencySymbol / أسبوع",
             priceUsd = "$4.99 / week",
             originalPriceEgp = null,
             originalPriceUsd = null,
@@ -123,20 +125,20 @@ fun SubscriptionScreen(
             id = "MONTHLY",
             title = "اشتراك شهري مميز",
             titleEn = "Premium Monthly Plan",
-            priceEgp = "199 ج.م / شهر",
+            priceEgp = "199 $currencySymbol / شهر",
             priceUsd = "$12.99 / month",
-            originalPriceEgp = "349 ج.م",
+            originalPriceEgp = "349 $currencySymbol",
             originalPriceUsd = "$19.99",
-            badge = "الأكثر طلباً بمصر • وفر 45%",
+            badge = if (currencyCode == "EGP") "الأكثر طلباً بمصر • وفر 45%" else "الأكثر طلباً • وفر 45%",
             isPopular = true
         ),
         PlanOption(
             id = "ANNUAL",
             title = "اشتراك سنوي كامل (حتى الزواج)",
             titleEn = "Full Annual Plan",
-            priceEgp = "899 ج.م / سنة",
+            priceEgp = "899 $currencySymbol / سنة",
             priceUsd = "$59.99 / year",
-            originalPriceEgp = "1799 ج.م",
+            originalPriceEgp = "1799 $currencySymbol",
             originalPriceUsd = "$119.99",
             badge = "أفضل قيمة توفير • وفر 65%",
             isPopular = false
