@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 sealed class ScreenState {
     object Onboarding : ScreenState()
     object Auth : ScreenState()
+    object CommitmentAgreement : ScreenState()
     object Main : ScreenState()
     object Filters : ScreenState()
     object GoldCenter : ScreenState()
@@ -48,6 +49,8 @@ data class UiState(
     val currentScreen: ScreenState = ScreenState.Onboarding,
     val currentTab: MainNavigationTab = MainNavigationTab.DISCOVER,
     val language: AppLanguage = AppLanguage.ARABIC,
+    val webAdminServerPort: Int = 8080,
+    val isWebAdminServerRunning: Boolean = true,
     val candidates: List<CandidateProfile> = emptyList(),
     val filteredCandidates: List<CandidateProfile> = emptyList(),
     val matchedCandidates: List<CandidateProfile> = emptyList(),
@@ -84,9 +87,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    private var webAdminServer: com.example.server.WebAdminServer? = null
+
     init {
         initDatabaseIfNeeded()
         observeData()
+        loadLocalPreferences()
+        startWebAdminServer()
+    }
+
+    private fun loadLocalPreferences() {
+        val prefs = getApplication<Application>().getSharedPreferences("sawa_user_prefs", android.content.Context.MODE_PRIVATE)
+        val hasAgreed = prefs.getBoolean("commitment_agreed", false)
+        if (hasAgreed) {
+            _uiState.update { it.copy(currentUser = it.currentUser.copy(hasAcceptedCommitmentAgreement = true)) }
+        }
     }
 
     private fun initDatabaseIfNeeded() {
@@ -256,19 +271,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onAuthSuccess(name: String, phoneOrEmail: String, activeHours: String) {
+        val prefs = getApplication<Application>().getSharedPreferences("sawa_user_prefs", android.content.Context.MODE_PRIVATE)
+        val hasAgreed = prefs.getBoolean("commitment_agreed", false)
+
         _uiState.update { state ->
             val updatedUser = state.currentUser.copy(
                 name = if (name.isNotBlank()) name else state.currentUser.name,
                 phoneNumber = if (phoneOrEmail.startsWith("+") || phoneOrEmail.any { ch -> ch.isDigit() }) phoneOrEmail else state.currentUser.phoneNumber,
                 email = if (phoneOrEmail.contains("@")) phoneOrEmail else state.currentUser.email,
                 activeHours = if (activeHours.isNotBlank()) activeHours else state.currentUser.activeHours,
-                isRegisteredWithFirebase = true
+                isRegisteredWithFirebase = true,
+                hasAcceptedCommitmentAgreement = hasAgreed
             )
             state.copy(
                 currentUser = updatedUser,
+                currentScreen = if (hasAgreed) ScreenState.Main else ScreenState.CommitmentAgreement
+            )
+        }
+    }
+
+    fun acceptCommitmentAgreement() {
+        val prefs = getApplication<Application>().getSharedPreferences("sawa_user_prefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("commitment_agreed", true).apply()
+        _uiState.update { state ->
+            state.copy(
+                currentUser = state.currentUser.copy(hasAcceptedCommitmentAgreement = true),
                 currentScreen = ScreenState.Main
             )
         }
+        showTopNotification(
+            iconEmoji = "🤝",
+            title = if (_uiState.value.language == AppLanguage.ARABIC) "أهلاً بك في منصة سوا! تم تسجيل تعهدك بالالتزام" else "Welcome to Sawa! Your commitment has been recorded"
+        )
     }
 
     fun updateUserLocation(lat: Double, lon: Double, note: String) {
@@ -849,6 +883,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             is ScreenState.ChaperoneNotice -> {
                 _uiState.update { it.copy(currentScreen = ScreenState.Main) }
             }
+            is ScreenState.CommitmentAgreement -> {
+                _uiState.update { it.copy(currentScreen = ScreenState.Auth) }
+            }
             is ScreenState.Auth -> {
                 _uiState.update { it.copy(currentScreen = ScreenState.Onboarding) }
             }
@@ -1183,5 +1220,62 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun dismissRoseShower() {
         _uiState.update { it.copy(showRoseShowerOverlay = false) }
+    }
+
+    // Web Administration Server (Browser control of app content, permissions, verification, and pricing)
+    fun startWebAdminServer() {
+        if (webAdminServer != null) return
+        try {
+            webAdminServer = com.example.server.WebAdminServer(
+                context = getApplication(),
+                getCandidates = { _uiState.value.candidates },
+                onToggleBan = { id -> adminToggleBan(id) },
+                onToggleVerify = { id -> adminToggleVerify(id) },
+                onToggleGold = { id -> adminToggleGold(id) },
+                onUpdateCandidateContent = { id, name, city, bio ->
+                    viewModelScope.launch {
+                        val cand = candidateDao.getCandidateById(id) ?: return@launch
+                        val updated = cand.copy(name = name, city = city, bio = bio)
+                        candidateDao.update(updated)
+                    }
+                },
+                getPricing = {
+                    val settings = _uiState.value.appSettings
+                    mapOf(
+                        "weekly" to settings.weeklyPrice,
+                        "monthly" to settings.monthlyPrice,
+                        "annual" to settings.annualPrice
+                    )
+                },
+                onUpdatePricing = { weekly, monthly, annual ->
+                    val currentBundle = _uiState.value.appSettings.bundlePrice
+                    updatePlanPrices(weekly, monthly, annual, currentBundle)
+                },
+                getVerifications = { _uiState.value.verificationRequests },
+                onActionVerification = { id, approve ->
+                    if (approve) {
+                        adminApproveVerification(id)
+                    } else {
+                        adminRejectVerification(id)
+                    }
+                }
+            ).also { server ->
+                server.start()
+                _uiState.update { it.copy(webAdminServerPort = server.activePort, isWebAdminServerRunning = true) }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "Failed to start WebAdminServer", e)
+        }
+    }
+
+    fun stopWebAdminServer() {
+        webAdminServer?.stop()
+        webAdminServer = null
+        _uiState.update { it.copy(isWebAdminServerRunning = false) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        webAdminServer?.stop()
     }
 }

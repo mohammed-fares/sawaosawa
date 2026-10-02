@@ -132,7 +132,9 @@ data class CurrentUserProfile(
     val selfieUri: String? = null,
     val bioAudioDuration: String? = null,
     val revealedPhotoUserIds: Set<String> = emptySet(),
-    val likedCandidateIds: Set<String> = emptySet()
+    val likedCandidateIds: Set<String> = emptySet(),
+    val hasAcceptedCommitmentAgreement: Boolean = false,
+    val commitmentAgreementTimestamp: Long = 0L
 )
 
 data class PhotoVerificationRequest(

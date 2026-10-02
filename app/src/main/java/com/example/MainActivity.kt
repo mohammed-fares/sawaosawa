@@ -37,6 +37,7 @@ import com.example.ui.screens.CommunityScreen
 import com.example.ui.screens.DiscoveryScreen
 import com.example.ui.screens.EditProfileScreen
 import com.example.ui.screens.FiltersScreen
+import com.example.ui.screens.CommitmentAgreementScreen
 import com.example.ui.screens.GoldCenterScreen
 import com.example.ui.screens.MatchCelebrationScreen
 import com.example.ui.screens.MyProfileScreen
@@ -107,6 +108,15 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onBack = { viewModel.navigateBack() }
+                            )
+                        }
+
+                        is ScreenState.CommitmentAgreement -> {
+                            CommitmentAgreementScreen(
+                                user = uiState.currentUser,
+                                language = uiState.language,
+                                onAcceptAgreement = { viewModel.acceptCommitmentAgreement() },
+                                onLogout = { viewModel.logout() }
                             )
                         }
 
