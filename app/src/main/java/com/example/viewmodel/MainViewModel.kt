@@ -229,13 +229,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (candidate.isBanned) return@filter false
             val ageMatches = candidate.age in filters.minAge..filters.maxAge
             val practiceMatches = filters.religiousPractice == "الكل" || filters.religiousPractice == "All" ||
-                    candidate.religiousPractice.contains(filters.religiousPractice) ||
+                    candidate.religiousPractice.contains(filters.religiousPractice, ignoreCase = true) ||
                     candidate.religiousPracticeEn.contains(filters.religiousPractice, ignoreCase = true)
             val dressMatches = filters.islamicDress == "الكل" || filters.islamicDress == "All" ||
-                    candidate.islamicDress.contains(filters.islamicDress) ||
+                    candidate.islamicDress.contains(filters.islamicDress, ignoreCase = true) ||
                     candidate.islamicDressEn.contains(filters.islamicDress, ignoreCase = true)
             val verifiedMatches = !filters.onlyVerified || candidate.isVerified
-            ageMatches && practiceMatches && dressMatches && verifiedMatches
+            val ethnicityMatches = filters.ethnicity == "الكل" || filters.ethnicity == "All" ||
+                    candidate.ethnicity.contains(filters.ethnicity, ignoreCase = true) ||
+                    candidate.ethnicityEn.contains(filters.ethnicity, ignoreCase = true)
+            val locationMatches = filters.locationCountry == "الكل" || filters.locationCountry == "All" ||
+                    candidate.city.contains(filters.locationCountry, ignoreCase = true) ||
+                    candidate.cityEn.contains(filters.locationCountry, ignoreCase = true)
+            val languageMatches = filters.languagePreference == "الكل" || filters.languagePreference == "All" ||
+                    candidate.languages.contains(filters.languagePreference, ignoreCase = true)
+            ageMatches && practiceMatches && dressMatches && verifiedMatches && ethnicityMatches && locationMatches && languageMatches
         }
     }
 
@@ -567,6 +575,123 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return true
         }
         return false
+    }
+
+    fun purchaseFullBundle() {
+        _uiState.update { state ->
+            val updatedUser = state.currentUser.copy(
+                boostsRemaining = state.currentUser.boostsRemaining + 5,
+                instantChatsRemaining = state.currentUser.instantChatsRemaining + 20,
+                rosesBalance = state.currentUser.rosesBalance + 50,
+                heartsBalance = state.currentUser.heartsBalance + 25,
+                isGoldMember = true,
+                isVip = true
+            )
+            state.copy(
+                currentUser = updatedUser,
+                boostsRemaining = updatedUser.boostsRemaining,
+                showRocketTakeoffOverlay = true
+            )
+        }
+        showTopNotification(
+            iconEmoji = "🎁",
+            title = if (_uiState.value.language == AppLanguage.ARABIC) "تم تفعيل باقة الامتيازات الشاملة!" else "Full Bundle Activated!",
+            message = if (_uiState.value.language == AppLanguage.ARABIC) "حصلت على 20 كسر جليد، 50 باقة ورد، 25 قلب مميز، 5 تعزيزات، وعضوية VIP!" else "Received 20 icebreakers, 50 roses, 25 hearts, 5 boosts & VIP!",
+            durationMs = 4500L
+        )
+    }
+
+    fun breakChatIce() {
+        if (_uiState.value.currentUser.instantChatsRemaining > 0) {
+            _uiState.update { state ->
+                state.copy(currentUser = state.currentUser.copy(instantChatsRemaining = state.currentUser.instantChatsRemaining - 1))
+            }
+            showTopNotification(
+                iconEmoji = "⚡",
+                title = if (_uiState.value.language == AppLanguage.ARABIC) "رصيد كسر الجليد والدردشة" else "Chat Icebreaker Used",
+                message = if (_uiState.value.language == AppLanguage.ARABIC) "تم استخدام كسر جليد واحد لمراسلة فورية! المتبقي: ${_uiState.value.currentUser.instantChatsRemaining}" else "Used 1 icebreaker! Remaining: ${_uiState.value.currentUser.instantChatsRemaining}",
+                durationMs = 3000L
+            )
+        } else {
+            showTopNotification(
+                iconEmoji = "⚠️",
+                title = if (_uiState.value.language == AppLanguage.ARABIC) "رصيد كسر الجليد غير كافٍ" else "Insufficient Icebreaker Credits",
+                message = if (_uiState.value.language == AppLanguage.ARABIC) "يمكنك شحن رصيد إضافي أو شراء باقة الامتيازات الكاملة" else "Recharge credits or buy the full bundle pack",
+                durationMs = 3000L
+            )
+        }
+    }
+
+    fun sendVirtualHeart() {
+        if (_uiState.value.currentUser.heartsBalance > 0) {
+            _uiState.update { state ->
+                state.copy(currentUser = state.currentUser.copy(heartsBalance = state.currentUser.heartsBalance - 1))
+            }
+            showTopNotification(
+                iconEmoji = "💖",
+                title = if (_uiState.value.language == AppLanguage.ARABIC) "إرسال علامة القلب والإعجاب المميز" else "Super Heart Sent",
+                message = if (_uiState.value.language == AppLanguage.ARABIC) "تم إرسال إعجاب مميز بقلب متوهج بنية الزواج الحلال! رصيدك: ${_uiState.value.currentUser.heartsBalance}" else "Sent special glowing heart for halal marriage! Balance: ${_uiState.value.currentUser.heartsBalance}",
+                durationMs = 3500L
+            )
+        } else {
+            showTopNotification(
+                iconEmoji = "💖",
+                title = if (_uiState.value.language == AppLanguage.ARABIC) "رصيد القلوب غير كافٍ" else "Hearts Balance Empty",
+                message = if (_uiState.value.language == AppLanguage.ARABIC) "قم بتفعيل باقة الامتيازات الكاملة للحصول على 25 قلباً مميزاً" else "Activate full bundle for 25 super hearts",
+                durationMs = 3000L
+            )
+        }
+    }
+
+    fun onInviteContactsSuccess(contactsCount: Int) {
+        _uiState.update { state ->
+            val updatedUser = state.currentUser.copy(
+                rosesBalance = state.currentUser.rosesBalance + 10,
+                boostsRemaining = state.currentUser.boostsRemaining + 1,
+                instantChatsRemaining = state.currentUser.instantChatsRemaining + 3,
+                heartsBalance = state.currentUser.heartsBalance + 5
+            )
+            state.copy(currentUser = updatedUser)
+        }
+        showTopNotification(
+            iconEmoji = "🎁",
+            title = if (_uiState.value.language == AppLanguage.ARABIC) "مكافأة دعوة جهات الاتصال!" else "Contacts Invite Reward!",
+            message = if (_uiState.value.language == AppLanguage.ARABIC) "تم إرسال الدعوات وحصلت على 10 باقات ورد، 1 تعزيز، 3 كسر جليد، و5 قلوب!" else "Invites sent! Received 10 roses, 1 boost, 3 chats & 5 hearts!",
+            durationMs = 4500L
+        )
+    }
+
+    fun onGpsLocationUpdated(lat: Double, lng: Double, cityName: String) {
+        _uiState.update { state ->
+            val updatedUser = state.currentUser.copy(
+                latitude = lat,
+                longitude = lng,
+                locationCity = cityName,
+                isGpsEnabled = true
+            )
+            state.copy(currentUser = updatedUser)
+        }
+        showTopNotification(
+            iconEmoji = "📍",
+            title = if (_uiState.value.language == AppLanguage.ARABIC) "تم تحديث موقعك بدقة" else "Location Updated",
+            message = if (_uiState.value.language == AppLanguage.ARABIC) "تم ضبط إحداثيات GPS ($cityName) لحساب أقرب التوافقات بدقة" else "GPS coordinates updated for accurate proximity matching",
+            durationMs = 3000L
+        )
+    }
+
+    fun onSaveAudioBio(duration: String) {
+        _uiState.update { state ->
+            val updatedUser = state.currentUser.copy(
+                bioAudioDuration = duration
+            )
+            state.copy(currentUser = updatedUser)
+        }
+        showTopNotification(
+            iconEmoji = "🎙️",
+            title = if (_uiState.value.language == AppLanguage.ARABIC) "تم حفظ التسجيل الصوتي التعريفي!" else "Audio Bio Saved!",
+            message = if (_uiState.value.language == AppLanguage.ARABIC) "أصبح مقطعك الصوتي متاحاً الآن في ملفك الشخصي ($duration)" else "Your audio bio is now live on your profile ($duration)",
+            durationMs = 3500L
+        )
     }
 
     fun toggleAudioPlayback(messageId: Long) {

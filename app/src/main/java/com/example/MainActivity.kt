@@ -458,6 +458,21 @@ class MainActivity : ComponentActivity() {
                                                 }
                                             },
                                             onLogout = { viewModel.logout() },
+                                            onBreakIce = { viewModel.breakChatIce() },
+                                            onSendRose = {
+                                                viewModel.showTopNotification(
+                                                    iconEmoji = "🌹",
+                                                    title = if (isArabic) "رصيد باقات الورد" else "Roses Balance",
+                                                    message = if (isArabic) "لديك ${uiState.currentUser.rosesBalance} باقة ورد متاحة للإهداء والتجديد!" else "You have ${uiState.currentUser.rosesBalance} roses to gift or renew!",
+                                                    durationMs = 3000L
+                                                )
+                                            },
+                                            onSendHeart = { viewModel.sendVirtualHeart() },
+                                            onActivateBoost = { viewModel.activateBoost() },
+                                            onBuyFullBundle = { viewModel.purchaseFullBundle() },
+                                            onInviteContactsSuccess = { count -> viewModel.onInviteContactsSuccess(count) },
+                                            onUpdateGpsLocation = { lat, lng, city -> viewModel.onGpsLocationUpdated(lat, lng, city) },
+                                            onSaveAudioBio = { duration -> viewModel.onSaveAudioBio(duration) },
                                             modifier = Modifier.padding(innerPadding)
                                         )
                                     }

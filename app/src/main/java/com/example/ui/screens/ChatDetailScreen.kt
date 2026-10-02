@@ -12,6 +12,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -80,6 +87,7 @@ import com.example.ui.theme.PetroleumGreen
 import com.example.ui.theme.PetroleumGreenContainer
 import com.example.ui.theme.PetroleumGreenDark
 import com.example.ui.theme.RadiantGold
+import com.example.ui.theme.RadiantGoldDark
 
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Flag
@@ -416,12 +424,15 @@ fun ChatDetailScreen(
                     }
                 }
 
-                // Chat Input Bar (Gallery photo, 30s Mic, Capsule Input, Send - with proper imePadding)
+                // Chat Input Bar (Gallery photo, 30s Mic, Capsule Input, Send - flush with keyboard with zero excess offset)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .imePadding()
+                        .windowInsetsPadding(
+                            WindowInsets.navigationBars.only(WindowInsetsSides.Bottom).union(
+                                WindowInsets.ime.only(WindowInsetsSides.Bottom)
+                            )
+                        )
                 ) {
                     if (isRecordingVoiceNote) {
                         // Active 30-Second Voice Recording Bar

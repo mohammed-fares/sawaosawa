@@ -24,6 +24,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CardMembership
@@ -100,10 +111,62 @@ fun MyProfileScreen(
     onUpdatePresence: (activeHours: String, isOnline: Boolean) -> Unit,
     onResetDiscovery: () -> Unit,
     onLogout: () -> Unit,
+    onBreakIce: () -> Unit = {},
+    onSendRose: () -> Unit = {},
+    onSendHeart: () -> Unit = {},
+    onActivateBoost: () -> Unit = {},
+    onBuyFullBundle: () -> Unit = {},
+    onInviteContactsSuccess: (Int) -> Unit = {},
+    onUpdateGpsLocation: (Double, Double, String) -> Unit = { _, _, _ -> },
+    onSaveAudioBio: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isArabic = language == AppLanguage.ARABIC
     var showLogoutDialog by remember { mutableStateOf(false) }
+
+    var showAudioBioDialog by remember { mutableStateOf(false) }
+    var isRecordingBio by remember { mutableStateOf(false) }
+    var bioSeconds by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var isPlayingBio by remember { mutableStateOf(false) }
+
+    val contactsPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            onInviteContactsSuccess(28)
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        val granted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            onUpdateGpsLocation(30.0444, 31.2357, if (isArabic) "القاهرة، المعادي" else "Cairo, Maadi")
+        }
+    }
+
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            showAudioBioDialog = true
+        }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(isRecordingBio) {
+        if (isRecordingBio) {
+            bioSeconds = 0
+            while (isRecordingBio && bioSeconds < 30) {
+                kotlinx.coroutines.delay(1000)
+                bioSeconds++
+            }
+            if (isRecordingBio && bioSeconds >= 30) {
+                isRecordingBio = false
+            }
+        }
+    }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -335,6 +398,181 @@ fun MyProfileScreen(
                             trackColor = Color.White.copy(alpha = 0.8f)
                         )
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // SECTION: Aziz Perks & Balances Card (رصيد الامتيازات والباقات)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, RadiantGold.copy(alpha = 0.7f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "👑", fontSize = 20.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = if (isArabic) "رصيد الامتيازات الخاصة (عزيز) والباقات" else "Aziz Perks & Balances",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PetroleumGreenDark
+                                )
+                                Text(
+                                    text = if (isArabic) "رصيدك المتاح من كسر الجليد، الورود، والقلوب" else "Icebreakers, roses, super hearts & boosts",
+                                    fontSize = 11.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // 4-Balance Metric Grid
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // 1. كسر الدردشة
+                        PerkBalanceBadge(
+                            iconEmoji = "⚡",
+                            title = if (isArabic) "كسر الدردشة" else "Icebreaker",
+                            count = "${user.instantChatsRemaining}",
+                            actionText = if (isArabic) "استخدام" else "Use",
+                            onClick = onBreakIce,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // 2. إرسال الورود
+                        PerkBalanceBadge(
+                            iconEmoji = "🌹",
+                            title = if (isArabic) "باقات الورد" else "Roses",
+                            count = "${user.rosesBalance}",
+                            actionText = if (isArabic) "إهداء" else "Gift",
+                            onClick = onSendRose,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // 3. علامة القلب
+                        PerkBalanceBadge(
+                            iconEmoji = "💖",
+                            title = if (isArabic) "علامة القلب" else "Hearts",
+                            count = "${user.heartsBalance}",
+                            actionText = if (isArabic) "إرسال" else "Send",
+                            onClick = onSendHeart,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // 4. التعزيز
+                        PerkBalanceBadge(
+                            iconEmoji = "🚀",
+                            title = if (isArabic) "تعزيز الملف" else "Boosts",
+                            count = "${user.boostsRemaining}",
+                            actionText = if (isArabic) "إطلاق" else "Launch",
+                            onClick = onActivateBoost,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Full Bundle Package Promotion Button (نظام الباقة الكاملة)
+                    Button(
+                        onClick = onBuyFullBundle,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = RadiantGoldDark,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(imageVector = Icons.Default.CardGiftcard, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isArabic) "تفعيل باقة الامتيازات الشاملة (VIP Bundle) 🎁" else "Activate Full VIP Perks Bundle 🎁",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // SECTION: Legal Device Permissions & Integrations (الصلاحيات القانونية والتواصل)
+            Text(
+                text = if (isArabic) "الصلاحيات القانونية وخدمات الهاتف 📱" else "Permissions & System Integration 📱",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = PetroleumGreen,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                    // Permission 1: Contacts Invitation
+                    ProfileMenuRow(
+                        title = if (isArabic) "دعوة جهات الاتصال وكسب مكافآت 🎁" else "Invite Contacts & Earn Rewards 🎁",
+                        subtitle = if (isArabic) "صلاحية دفتر الهاتف لإرسال دعوات واكتساب 10 ورود وتعزيز مجاني" else "Read contacts to invite friends and earn bonus roses",
+                        icon = Icons.Default.Contacts,
+                        onClick = {
+                            contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                        }
+                    )
+
+                    Divider(color = Color.LightGray.copy(alpha = 0.3f))
+
+                    // Permission 2: GPS Location
+                    ProfileMenuRow(
+                        title = if (isArabic) "تحديث الموقع الجغرافي الدقيق (GPS) 📍" else "Update Accurate GPS Location 📍",
+                        subtitle = if (isArabic) "صلاحية تحديد المكان لحساب أقرب التوافقات في منطقتك (${user.locationCity})" else "Location permission for nearest candidate matching (${user.locationCity})",
+                        icon = Icons.Default.LocationOn,
+                        onClick = {
+                            locationPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }
+                    )
+
+                    Divider(color = Color.LightGray.copy(alpha = 0.3f))
+
+                    // Permission 3: Audio Bio Recording (Microphone)
+                    ProfileMenuRow(
+                        title = if (isArabic) "تسجيل صوتي تعريفي للملف الشخصي (30 ثانية) 🎙️" else "Record Audio Bio (30s max) 🎙️",
+                        subtitle = if (user.bioAudioDuration != null) {
+                            if (isArabic) "تم حفظ تسجيلك التعريفي (${user.bioAudioDuration}) - اضغط للاستماع أو التسجيل مجدداً" else "Audio bio saved (${user.bioAudioDuration}) - tap to update or play"
+                        } else {
+                            if (isArabic) "صلاحية الميكروفون لتسجيل نبذة صوتية تظهر في ملفك الشخصي" else "Mic permission to add a voice bio to your profile"
+                        },
+                        icon = Icons.Default.Mic,
+                        onClick = {
+                            micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    )
                 }
             }
 
@@ -803,6 +1041,192 @@ fun MyProfileScreen(
                 }
             }
         )
+    }
+
+    // Audio Bio Recording & Playback Modal Dialog
+    if (showAudioBioDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                isRecordingBio = false
+                showAudioBioDialog = false
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "🎙️", fontSize = 22.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (isArabic) "تسجيل النبذة الصوتية (30 ثانية)" else "Record Audio Bio (30s)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = PetroleumGreenDark
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = if (isArabic)
+                            "تحدث بنبرة واضحة ومحتشمة عن طموحاتك ومواصفات شريك الحياة المنشود."
+                        else
+                            "Speak clearly and modestly about your aspirations and spouse preferences.",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        lineHeight = 16.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Timer & Waveform Box
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (isRecordingBio) Color(0xFF1E282D) else PetroleumGreenContainer)
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isRecordingBio) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .background(Color(0xFFE53935), CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                Text(
+                                    text = "00:${String.format("%02d", bioSeconds)} / 00:30",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (isRecordingBio) Color.White else PetroleumGreenDark
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = if (isRecordingBio) "ılıll|llılı|l|ll|llılı" else "•••••••••••••••••",
+                                fontSize = 16.sp,
+                                color = if (isRecordingBio) RadiantGold else PetroleumGreen,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Record / Stop Trigger Button
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (!isRecordingBio) {
+                            Button(
+                                onClick = { isRecordingBio = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Mic, contentDescription = null, tint = Color.White)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(if (isArabic) "بدء التسجيل" else "Start Recording", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            Button(
+                                onClick = { isRecordingBio = false },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E2E2E)),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Stop, contentDescription = null, tint = Color.White)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(if (isArabic) "إيقاف التسجيل" else "Stop", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val durationStr = String.format("00:%02d", bioSeconds.coerceAtLeast(5))
+                        onSaveAudioBio(durationStr)
+                        showAudioBioDialog = false
+                    },
+                    enabled = bioSeconds > 0 && !isRecordingBio,
+                    colors = ButtonDefaults.buttonColors(containerColor = PetroleumGreen),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(if (isArabic) "حفظ في الملف الشخصي ✓" else "Save to Profile ✓", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    isRecordingBio = false
+                    showAudioBioDialog = false
+                }) {
+                    Text(if (isArabic) "إلغاء" else "Cancel", color = Color.Gray)
+                }
+            },
+            shape = RoundedCornerShape(22.dp)
+        )
+    }
+}
+
+@Composable
+fun PerkBalanceBadge(
+    iconEmoji: String,
+    title: String,
+    count: String,
+    actionText: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.35f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = iconEmoji, fontSize = 18.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = count,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Black,
+                color = PetroleumGreenDark
+            )
+            Text(
+                text = title,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Gray,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(PetroleumGreenContainer)
+                    .clickable { onClick() }
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
+            ) {
+                Text(
+                    text = actionText,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PetroleumGreenDark
+                )
+            }
+        }
     }
 }
 

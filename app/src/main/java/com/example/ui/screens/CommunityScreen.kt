@@ -274,21 +274,13 @@ fun CommunityScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             // Enhanced Spacious Sub-Tabs Row: "الأقرب إليك", "أعجب بك", "زار ملفك", "المفضلة"
-            androidx.compose.material3.ScrollableTabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = Color.Transparent,
-                contentColor = PetroleumGreen,
-                edgePadding = 14.dp,
-                divider = {},
-                indicator = { tabPositions ->
-                    if (selectedTab in tabPositions.indices) {
-                        TabRowDefaults.Indicator(
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                            color = PetroleumGreen,
-                            height = 3.dp
-                        )
-                    }
-                }
+            // Designed with generous padding and independent badge pills so emojis & numbers never distort the layout
+            androidx.compose.foundation.lazy.LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 val tabsList = listOf(
                     Triple(if (isArabic) "الأقرب إليك" else "Nearest", "📍", null),
@@ -297,42 +289,54 @@ fun CommunityScreen(
                     Triple(if (isArabic) "المفضلة" else "Favorites", "⭐", "5")
                 )
 
-                tabsList.forEachIndexed { index, (label, emoji, count) ->
+                items(tabsList.size) { index ->
+                    val (label, emoji, count) = tabsList[index]
                     val isSelected = selectedTab == index
-                    Tab(
-                        selected = isSelected,
+
+                    Surface(
                         onClick = { selectedTab = index },
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                        shape = RoundedCornerShape(22.dp),
+                        color = if (isSelected) PetroleumGreenContainer else MaterialTheme.colorScheme.surface,
+                        border = androidx.compose.foundation.BorderStroke(
+                            width = if (isSelected) 1.5.dp else 1.dp,
+                            color = if (isSelected) PetroleumGreen else Color.LightGray.copy(alpha = 0.5f)
+                        ),
+                        shadowElevation = if (isSelected) 2.dp else 0.dp,
+                        modifier = Modifier.height(44.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(if (isSelected) PetroleumGreenContainer else Color.Transparent)
                                 .padding(horizontal = 14.dp, vertical = 8.dp)
                         ) {
-                            Text(text = emoji, fontSize = 13.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = emoji,
+                                fontSize = 14.sp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = label,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                                 fontSize = 13.sp,
-                                color = if (isSelected) PetroleumGreenDark else Color.DarkGray
+                                maxLines = 1,
+                                softWrap = false,
+                                color = if (isSelected) PetroleumGreenDark else MaterialTheme.colorScheme.onSurface
                             )
                             if (count != null) {
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(10.dp))
+                                        .clip(RoundedCornerShape(12.dp))
                                         .background(if (index == 1) MuzzPink else RadiantGold)
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = count,
-                                        fontSize = 10.sp,
-                                        color = if (index == 1) Color.White else PetroleumGreenDark,
-                                        fontWeight = FontWeight.Bold
+                                        fontSize = 11.sp,
+                                        color = if (index == 1) Color.White else Color(0xFF261D05),
+                                        fontWeight = FontWeight.ExtraBold
                                     )
                                 }
                             }

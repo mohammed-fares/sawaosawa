@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
@@ -1673,3 +1674,56 @@ fun PriceEditorCard(
         }
     }
 }
+
+@Composable
+fun EditablePriceCard(
+    planName: String,
+    currencySymbol: String,
+    price: Double,
+    onPriceChanged: (Double) -> Unit,
+    activeSubscribers: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = planName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(text = "المشتركون حالياً: $activeSubscribers", fontSize = 11.sp, color = Color.Gray)
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = { onPriceChanged((price - 10.0).coerceAtLeast(9.0)) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Text("-", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PetroleumGreen)
+                }
+
+                Text(
+                    text = "${price.toInt()} $currencySymbol",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 15.sp,
+                    color = PetroleumGreen,
+                    modifier = Modifier.padding(horizontal = 6.dp)
+                )
+
+                IconButton(
+                    onClick = { onPriceChanged(price + 10.0) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PetroleumGreen)
+                }
+            }
+        }
+    }
+}
+

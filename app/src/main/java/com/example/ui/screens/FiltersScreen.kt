@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -77,8 +78,15 @@ fun FiltersScreen(
     }
     var selectedPractice by remember { mutableStateOf(currentFilters.religiousPractice) }
     var selectedDress by remember { mutableStateOf(currentFilters.islamicDress) }
+    var selectedLocation by remember { mutableStateOf(currentFilters.locationCountry) }
+    var selectedLanguage by remember { mutableStateOf(currentFilters.languagePreference) }
+    var selectedEthnicity by remember { mutableStateOf(currentFilters.ethnicity) }
     var showOtherProfiles by remember { mutableStateOf(currentFilters.showOtherProfiles) }
     var onlyVerified by remember { mutableStateOf(currentFilters.onlyVerified) }
+
+    var showLocationDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    var showEthnicityDialog by remember { mutableStateOf(false) }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -121,6 +129,9 @@ fun FiltersScreen(
                         ageRange = 20f..35f
                         selectedPractice = "الكل"
                         selectedDress = "الكل"
+                        selectedLocation = "الكل"
+                        selectedLanguage = "الكل"
+                        selectedEthnicity = "الكل"
                         showOtherProfiles = true
                         onlyVerified = false
                         onReset()
@@ -182,22 +193,22 @@ fun FiltersScreen(
                 // 2. تحديد الموقع عبر
                 FilterItemRow(
                     title = if (isArabic) "تحديد الموقع عبر" else "Limit location by",
-                    value = if (isArabic) "دبي، الإمارات والخليج العربي" else "Dubai, UAE & GCC",
-                    onClick = {}
+                    value = if (selectedLocation == "الكل") (if (isArabic) "جميع الدول والمدن" else "All Countries") else selectedLocation,
+                    onClick = { showLocationDialog = true }
                 )
 
                 // 3. اللغة
                 FilterItemRow(
                     title = if (isArabic) "اللغة" else "Language",
-                    value = if (isArabic) "العربية، الإنجليزية، الفرنسية" else "Arabic, English, French",
-                    onClick = {}
+                    value = if (selectedLanguage == "الكل") (if (isArabic) "جميع اللغات" else "All Languages") else selectedLanguage,
+                    onClick = { showLanguageDialog = true }
                 )
 
                 // 4. الأصل العرقي
                 FilterItemRow(
                     title = if (isArabic) "الأصل العرقي" else "Ethnicity",
-                    value = if (isArabic) "عرب، خليجيون، شام، شمال أفريقيا" else "Arab, GCC, Levantine, North Africa",
-                    onClick = {}
+                    value = if (selectedEthnicity == "الكل") (if (isArabic) "جميع الأصول" else "All Ethnicities") else selectedEthnicity,
+                    onClick = { showEthnicityDialog = true }
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -390,6 +401,9 @@ fun FiltersScreen(
                         val newPref = FilterPreferences(
                             minAge = ageRange.start.toInt(),
                             maxAge = ageRange.endInclusive.toInt(),
+                            locationCountry = selectedLocation,
+                            languagePreference = selectedLanguage,
+                            ethnicity = selectedEthnicity,
                             religiousPractice = selectedPractice,
                             islamicDress = selectedDress,
                             onlyVerified = onlyVerified,
@@ -408,14 +422,132 @@ fun FiltersScreen(
                     )
                 ) {
                     Text(
-                        text = if (isArabic) "تطبيق" else "Apply",
+                        text = if (isArabic) "تطبيق المرشحات والتحديث" else "Apply Filters",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
         }
+
+        // Location Selection Dialog
+        if (showLocationDialog) {
+            val locationOptions = if (isArabic) {
+                listOf("الكل", "مصر والقاهرة", "السعودية والخليج", "دبي والإمارات", "بلاد الشام", "المغرب العربي")
+            } else {
+                listOf("All", "Egypt & Cairo", "Saudi & GCC", "Dubai & UAE", "Levant", "North Africa")
+            }
+            FilterOptionPickerModal(
+                title = if (isArabic) "تحديد الموقع الجغرافي" else "Select Location",
+                options = locationOptions,
+                selectedOption = selectedLocation,
+                onSelect = {
+                    selectedLocation = it
+                    showLocationDialog = false
+                },
+                onDismiss = { showLocationDialog = false }
+            )
+        }
+
+        // Language Selection Dialog
+        if (showLanguageDialog) {
+            val languageOptions = if (isArabic) {
+                listOf("الكل", "العربية", "الإنجليزية", "الفرنسية")
+            } else {
+                listOf("All", "Arabic", "English", "French")
+            }
+            FilterOptionPickerModal(
+                title = if (isArabic) "لغات التحدث المفضلة" else "Preferred Languages",
+                options = languageOptions,
+                selectedOption = selectedLanguage,
+                onSelect = {
+                    selectedLanguage = it
+                    showLanguageDialog = false
+                },
+                onDismiss = { showLanguageDialog = false }
+            )
+        }
+
+        // Ethnicity Selection Dialog
+        if (showEthnicityDialog) {
+            val ethnicityOptions = if (isArabic) {
+                listOf("الكل", "عربي", "خليجي", "شامي", "مغاربي", "مصري")
+            } else {
+                listOf("All", "Arab", "GCC", "Levantine", "North African", "Egyptian")
+            }
+            FilterOptionPickerModal(
+                title = if (isArabic) "الأصل والمنبت العرقي" else "Ethnicity & Heritage",
+                options = ethnicityOptions,
+                selectedOption = selectedEthnicity,
+                onSelect = {
+                    selectedEthnicity = it
+                    showEthnicityDialog = false
+                },
+                onDismiss = { showEthnicityDialog = false }
+            )
+        }
     }
+}
+
+@Composable
+fun FilterOptionPickerModal(
+    title: String,
+    options: List<String>,
+    selectedOption: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = PetroleumGreenDark)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                options.forEach { option ->
+                    val isSelected = selectedOption == option || (selectedOption == "الكل" && option == options.first())
+                    Surface(
+                        onClick = { onSelect(option) },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) PetroleumGreenContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        border = androidx.compose.foundation.BorderStroke(
+                            width = if (isSelected) 1.5.dp else 0.dp,
+                            color = if (isSelected) PetroleumGreen else Color.Transparent
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = option,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) PetroleumGreenDark else MaterialTheme.colorScheme.onSurface
+                            )
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = PetroleumGreen,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("إغلاق", color = PetroleumGreen, fontWeight = FontWeight.Bold)
+            }
+        },
+        shape = RoundedCornerShape(20.dp)
+    )
 }
 
 @Composable

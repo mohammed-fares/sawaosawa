@@ -75,6 +75,8 @@ data class FilterPreferences(
     val minAge: Int = 20,
     val maxAge: Int = 35,
     val maxDistanceKm: Int = 50,
+    val locationCountry: String = "الكل",
+    val languagePreference: String = "الكل",
     val ethnicity: String = "الكل",
     val religiousPractice: String = "الكل",
     val islamicDress: String = "الكل",
@@ -110,6 +112,7 @@ data class CurrentUserProfile(
     val subscriptionExpiresAt: String = "30 أكتوبر 2026",
     val boostsRemaining: Int = 3,
     val instantChatsRemaining: Int = 12,
+    val heartsBalance: Int = 18,
     val activeHours: String = "مساءً (من 7:00 م إلى 11:00 م)",
     val isOnlineNow: Boolean = true,
     val latitude: Double = 30.0444, // Cairo coordinates
@@ -127,6 +130,7 @@ data class CurrentUserProfile(
     val selectedPhotoIndex: Int = 0, // Which photo is primary
     val selfieVerificationStatus: String = "VERIFIED", // "NONE", "PENDING", "VERIFIED", "REJECTED"
     val selfieUri: String? = null,
+    val bioAudioDuration: String? = null,
     val revealedPhotoUserIds: Set<String> = emptySet(),
     val likedCandidateIds: Set<String> = emptySet()
 )
