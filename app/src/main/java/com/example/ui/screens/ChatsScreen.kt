@@ -230,22 +230,57 @@ fun ChatsScreen(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
             )
 
-            // Conversations List
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                items(candidatesToShow) { candidate ->
-                    ConversationItemView(
-                        candidate = candidate,
-                        isArabic = isArabic,
-                        onClick = { onOpenChat(candidate) }
-                    )
-                    Divider(
-                        color = Color.LightGray.copy(alpha = 0.2f),
-                        modifier = Modifier.padding(horizontal = 20.dp)
-                    )
+            if (candidatesToShow.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.ChatBubble,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(56.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = if (isArabic) "لا توجد محادثات نشطة بعد" else "No active chats yet",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (isArabic)
+                                "ابدأ بالإعجاب بالمرشحين في شاشة الاستكشاف لبدء التعارف والزواج الحلال"
+                            else
+                                "Start matching with candidates in Discovery to begin halal conversations",
+                            fontSize = 13.sp,
+                            color = Color.Gray,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    items(candidatesToShow) { candidate ->
+                        ConversationItemView(
+                            candidate = candidate,
+                            isArabic = isArabic,
+                            onClick = { onOpenChat(candidate) }
+                        )
+                        Divider(
+                            color = Color.LightGray.copy(alpha = 0.2f),
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        )
+                    }
                 }
             }
         }

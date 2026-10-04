@@ -20,6 +20,11 @@ android {
     versionName = "1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    buildConfigField("String", "PRODUCTION_API_URL", "\"https://api.sawasawa.app\"")
+    buildConfigField("String", "STAGING_API_URL", "\"https://staging-api.sawasawa.app\"")
+    buildConfigField("String", "DEBUG_API_URL", "\"http://10.0.2.2:3000\"")
+    buildConfigField("String", "API_BASE_URL", "\"https://api.sawasawa.app\"")
   }
 
   signingConfigs {
@@ -43,7 +48,9 @@ android {
       isCrunchPngs = false
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("release")
+      if (!System.getenv("STORE_PASSWORD").isNullOrEmpty() && !System.getenv("KEY_PASSWORD").isNullOrEmpty()) {
+        signingConfig = signingConfigs.getByName("release")
+      }
     }
     debug { signingConfig = signingConfigs.getByName("debugConfig") }
   }

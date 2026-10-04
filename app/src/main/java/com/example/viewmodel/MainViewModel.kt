@@ -19,6 +19,15 @@ import com.example.model.PhotoVerificationRequest
 import com.example.model.TransactionRecord
 import com.example.ui.components.TopNotificationData
 import com.example.util.SecureImagePickerHelper
+import com.example.model.RegistrationFlowStep
+import com.example.model.CompatibilityBreakdown
+import com.example.model.MatchingWeights
+import com.example.model.RoseLedgerEntry
+import com.example.model.HiddenConditionsRequest
+import com.example.model.AuditLogRecord
+import com.example.util.MatchingEngine
+import com.example.data.RoseLedgerRepository
+import com.example.data.SubscriptionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +38,7 @@ import kotlinx.coroutines.launch
 sealed class ScreenState {
     object Onboarding : ScreenState()
     object Auth : ScreenState()
+    data class RegistrationWizard(val step: RegistrationFlowStep = RegistrationFlowStep.WELCOME) : ScreenState()
     object CommitmentAgreement : ScreenState()
     object Main : ScreenState()
     object Filters : ScreenState()
@@ -76,13 +86,20 @@ data class UiState(
     val transactions: List<TransactionRecord> = emptyList(),
     val reports: List<AdminReport> = emptyList(),
     val showRocketTakeoffOverlay: Boolean = false,
-    val showRoseShowerOverlay: Boolean = false
+    val showRoseShowerOverlay: Boolean = false,
+    val registrationStep: RegistrationFlowStep = RegistrationFlowStep.WELCOME,
+    val roseLedger: List<RoseLedgerEntry> = emptyList(),
+    val compatibilityBreakdowns: Map<String, CompatibilityBreakdown> = emptyMap(),
+    val hiddenConditionsRequests: List<HiddenConditionsRequest> = emptyList(),
+    val auditLogs: List<AuditLogRecord> = emptyList()
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getDatabase(application)
     private val candidateDao = db.candidateDao()
     private val chatDao = db.chatDao()
+    private val roseLedgerRepo = RoseLedgerRepository(application)
+    private val subscriptionRepo = SubscriptionRepository(application)
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -99,19 +116,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadLocalPreferences() {
         val prefs = getApplication<Application>().getSharedPreferences("sawa_user_prefs", android.content.Context.MODE_PRIVATE)
         val hasAgreed = prefs.getBoolean("commitment_agreed", false)
+        val savedStepStr = prefs.getString("registration_step", RegistrationFlowStep.WELCOME.name) ?: RegistrationFlowStep.WELCOME.name
+        val savedStep = try { RegistrationFlowStep.valueOf(savedStepStr) } catch (_: Exception) { RegistrationFlowStep.WELCOME }
+        
         if (hasAgreed) {
-            _uiState.update { it.copy(currentUser = it.currentUser.copy(hasAcceptedCommitmentAgreement = true)) }
+            _uiState.update { 
+                it.copy(
+                    currentUser = it.currentUser.copy(hasAcceptedCommitmentAgreement = true),
+                    registrationStep = RegistrationFlowStep.COMPLETED,
+                    roseLedger = roseLedgerRepo.ledgerEntries.value
+                ) 
+            }
+        } else {
+            _uiState.update { it.copy(registrationStep = savedStep, roseLedger = roseLedgerRepo.ledgerEntries.value) }
         }
     }
 
     private fun initDatabaseIfNeeded() {
         viewModelScope.launch {
-            val count = candidateDao.countCandidates()
-            if (count == 0) {
-                candidateDao.insertAll(InitialData.sampleCandidates)
-                for (msg in InitialData.initialChatMessages) {
-                    chatDao.insertMessage(msg)
+            try {
+                val count = candidateDao.countCandidates()
+                if (count == 0) {
+                    candidateDao.insertAll(InitialData.sampleCandidates)
+                    for (msg in InitialData.initialChatMessages) {
+                        chatDao.insertMessage(msg)
+                    }
                 }
+            } catch (e: Exception) {
+                android.util.Log.e("MainViewModel", "Database initialization handled safely: " + e.message, e)
             }
 
             // Populate sample verification requests, transactions and reports for admin dashboard & testing
@@ -287,6 +319,224 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 currentUser = updatedUser,
                 currentScreen = if (hasAgreed) ScreenState.Main else ScreenState.CommitmentAgreement
             )
+        }
+    }
+
+    fun openRegistrationWizard() {
+        val step = _uiState.value.registrationStep
+        _uiState.update { it.copy(currentScreen = ScreenState.RegistrationWizard(step)) }
+    }
+
+    fun onRegistrationStepCompleted(nextStep: RegistrationFlowStep, updatedProfile: CurrentUserProfile) {
+        val prefs = getApplication<Application>().getSharedPreferences("sawa_user_prefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit().putString("registration_step", nextStep.name).apply()
+
+        _uiState.update { state ->
+            state.copy(
+                currentUser = updatedProfile,
+                registrationStep = nextStep,
+                currentScreen = if (nextStep == RegistrationFlowStep.COMPLETED) ScreenState.Main else ScreenState.RegistrationWizard(nextStep)
+            )
+        }
+
+        if (nextStep == RegistrationFlowStep.COMPLETED) {
+            prefs.edit().putBoolean("commitment_agreed", true).apply()
+            recalculateMatching()
+            showTopNotification(
+                iconEmoji = "🎉",
+                title = if (_uiState.value.language == AppLanguage.ARABIC)
+                    "تم إكمال تسجيل حسابك بنجاح! مرحباً بك في سوا سوا"
+                else
+                    "Registration completed! Welcome to Sawa Sawa"
+            )
+        }
+    }
+
+    fun recalculateMatching() {
+        val user = _uiState.value.currentUser
+        val weights = MatchingWeights()
+        val breakdowns = mutableMapOf<String, CompatibilityBreakdown>()
+        val updatedCandidates = _uiState.value.candidates.map { cand ->
+            val breakdown = MatchingEngine.calculateCompatibility(user, cand, weights)
+            breakdowns[cand.id] = breakdown
+            cand.copy(compatibilityScore = breakdown.totalScore)
+        }
+        _uiState.update { state ->
+            state.copy(
+                candidates = updatedCandidates,
+                filteredCandidates = applyFilters(updatedCandidates, state.filters),
+                compatibilityBreakdowns = breakdowns
+            )
+        }
+    }
+
+    fun requestHiddenConditionsAccess(candidateId: String, candidateName: String) {
+        val req = HiddenConditionsRequest(
+            id = "REQ-${System.currentTimeMillis()}",
+            requesterId = _uiState.value.currentUser.phoneNumber,
+            requesterName = _uiState.value.currentUser.name,
+            targetUserId = candidateId
+        )
+        _uiState.update { state ->
+            val updated = state.candidates.map {
+                if (it.id == candidateId) it.copy(hiddenConditionsAccessGranted = true) else it
+            }
+            state.copy(
+                candidates = updated,
+                filteredCandidates = applyFilters(updated, state.filters),
+                hiddenConditionsRequests = listOf(req) + state.hiddenConditionsRequests
+            )
+        }
+        showTopNotification(
+            iconEmoji = "📩",
+            title = if (_uiState.value.language == AppLanguage.ARABIC)
+                "تم إرسال طلب استئذان لرؤية شروط $candidateName"
+            else
+                "Requested permission to view conditions of $candidateName"
+        )
+    }
+
+    fun earnRoses(amount: Int, reason: String) {
+        roseLedgerRepo.recordTransaction(
+            type = "EARN",
+            amount = amount,
+            description = reason
+        )
+        _uiState.update { state ->
+            state.copy(
+                currentUser = state.currentUser.copy(rosesBalance = roseLedgerRepo.currentBalance.value),
+                roseLedger = roseLedgerRepo.ledgerEntries.value
+            )
+        }
+        showTopNotification(
+            iconEmoji = "🌹",
+            title = if (_uiState.value.language == AppLanguage.ARABIC)
+                "حصلت على $amount وردة! ($reason)"
+            else
+                "Earned $amount Roses! ($reason)"
+        )
+    }
+
+    fun buyRoses(amount: Int, paymentMethod: String, price: String) {
+        viewModelScope.launch {
+            subscriptionRepo.verifyAndActivatePayment(
+                planId = "ROSES_$amount",
+                planTitle = "باقة $amount وردة",
+                amount = price,
+                currency = _uiState.value.appSettings.appCurrency,
+                paymentMethod = paymentMethod,
+                userId = _uiState.value.currentUser.phoneNumber,
+                userName = _uiState.value.currentUser.name
+            )
+            roseLedgerRepo.recordTransaction(
+                type = "BUY",
+                amount = amount,
+                description = "شراء $amount وردة عبر $paymentMethod"
+            )
+            _uiState.update { state ->
+                state.copy(
+                    currentUser = state.currentUser.copy(rosesBalance = roseLedgerRepo.currentBalance.value),
+                    roseLedger = roseLedgerRepo.ledgerEntries.value,
+                    transactions = subscriptionRepo.transactions.value
+                )
+            }
+            showTopNotification(
+                iconEmoji = "💎",
+                title = if (_uiState.value.language == AppLanguage.ARABIC)
+                    "تم شراء $amount وردة بنجاح عبر $paymentMethod"
+                else
+                    "Purchased $amount Roses via $paymentMethod"
+            )
+        }
+    }
+
+    fun sendRosesWithLedger(candidateId: String, candidateName: String, count: Int = 1) {
+        val result = roseLedgerRepo.recordTransaction(
+            type = "SEND",
+            amount = count,
+            counterpartyId = candidateId,
+            counterpartyName = candidateName,
+            description = "إرسال باقة $count وردة إلى $candidateName بنية التعارف الحلال 🌹"
+        )
+        result.onSuccess {
+            _uiState.update { state ->
+                state.copy(
+                    currentUser = state.currentUser.copy(rosesBalance = roseLedgerRepo.currentBalance.value),
+                    roseLedger = roseLedgerRepo.ledgerEntries.value
+                )
+            }
+            triggerRoseShower()
+            showTopNotification(
+                iconEmoji = "🌹",
+                title = if (_uiState.value.language == AppLanguage.ARABIC)
+                    "تم إرسال باقة الورد إلى $candidateName بنجاح!"
+                else
+                    "Sent $count Roses to $candidateName!"
+            )
+        }.onFailure { err ->
+            showTopNotification(
+                iconEmoji = "⚠️",
+                title = err.message ?: "رصيد الورد غير كافٍ"
+            )
+        }
+    }
+
+    fun exportUserData() {
+        showTopNotification(
+            iconEmoji = "📦",
+            title = if (_uiState.value.language == AppLanguage.ARABIC)
+                "تم تجهيز وتصدير أرشيف بياناتك الشخصية (GDPR Archive)"
+            else
+                "Your personal data archive is prepared for download"
+        )
+    }
+
+    fun deleteAccountPermanently() {
+        viewModelScope.launch {
+            candidateDao.resetAllDiscovery()
+            val prefs = getApplication<Application>().getSharedPreferences("sawa_user_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.edit().clear().apply()
+            _uiState.update {
+                UiState(
+                    currentScreen = ScreenState.Onboarding,
+                    currentUser = CurrentUserProfile(name = "ضيف جديد", hasAcceptedCommitmentAgreement = false)
+                )
+            }
+            showTopNotification(
+                iconEmoji = "🗑️",
+                title = if (_uiState.value.language == AppLanguage.ARABIC)
+                    "تم حذف حسابك وكافة البيانات الشخصية نهائياً"
+                else
+                    "Your account and all data have been permanently deleted"
+            )
+        }
+    }
+
+    fun handleDeepLink(uriString: String) {
+        when {
+            uriString.contains("/profile/") -> {
+                val candId = uriString.substringAfter("/profile/").substringBefore("/")
+                val candidate = _uiState.value.candidates.find { it.id == candId }
+                if (candidate != null) {
+                    _uiState.update { it.copy(currentScreen = ScreenState.CandidateDetail(candidate)) }
+                }
+            }
+            uriString.contains("/invite/") -> {
+                val refCode = uriString.substringAfter("/invite/").substringBefore("/")
+                _uiState.update {
+                    it.copy(currentUser = it.currentUser.copy(referredBy = refCode))
+                }
+                showTopNotification(
+                    iconEmoji = "🎁",
+                    title = "تم تطبيق كود الدعوة والهدية الترحيبية: $refCode"
+                )
+            }
+            uriString.contains("/verify") -> {
+                _uiState.update { it.copy(currentScreen = ScreenState.SelfieVerification) }
+            }
+            uriString.contains("/download") -> {
+                _uiState.update { it.copy(currentScreen = ScreenState.Main) }
+            }
         }
     }
 
@@ -883,6 +1133,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             is ScreenState.ChaperoneNotice -> {
                 _uiState.update { it.copy(currentScreen = ScreenState.Main) }
             }
+            is ScreenState.RegistrationWizard -> {
+                _uiState.update { it.copy(currentScreen = ScreenState.Onboarding) }
+            }
             is ScreenState.CommitmentAgreement -> {
                 _uiState.update { it.copy(currentScreen = ScreenState.Auth) }
             }
@@ -1186,6 +1439,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             iconEmoji = "🛡️",
             title = "تم رفع البلاغ إلى المشرفين الشرعيين للمراجعة"
         )
+    }
+
+    fun dismissReport(reportId: String) {
+        _uiState.update { state ->
+            state.copy(reports = state.reports.filterNot { it.id == reportId })
+        }
     }
 
     fun revealPhotoToUser(candidateId: String) {

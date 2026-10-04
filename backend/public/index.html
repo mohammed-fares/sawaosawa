@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سوا سوا | حيث يلتقي المسلمون للزواج الحلال | Sawa Sawa</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="سوا سوا - المنصة الإسلامية الرائدة للزواج الحلال والتعارف الشرعي. توثيق الهوية بالسيلفي، ميزة إشراك ولي الأمر، وحماية الخصوصية بالكامل.">
+    <meta name="keywords" content="زواج إسلامي, زواج حلال, سوا سوا, تعارف شرعي, خطوبة, زواج مصر, زواج السعودية, مسلم مازوج, nikah, halal marriage, muslim matrimony">
+    <link rel="canonical" href="https://sawasawa.app/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sawasawa.app/">
+    <meta property="og:title" content="سوا سوا | حيث يلتقي المسلمون للزواج الحلال">
+    <meta property="og:description" content="منصة الزواج الإسلامي الأكثر أماناً وموثوقية في العالم العربي والإسلامي.">
+    <meta property="og:image" content="https://sawasawa.app/assets/og_banner.jpg">
+    <meta property="og:locale" content="ar_EG">
+    <meta property="og:locale:alternate" content="en_US">
+
+    <!-- Twitter / X -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://sawasawa.app/">
+    <meta property="twitter:title" content="Sawa Sawa - Where Muslims Meet To Marry">
+    <meta property="twitter:description" content="The leading halal matrimonial app with verified selfie profiles and chaperone integration.">
+    <meta property="twitter:image" content="https://sawasawa.app/assets/og_banner.jpg">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "name": "Sawa Sawa",
+          "alternateName": "سوا سوا",
+          "url": "https://sawasawa.app",
+          "logo": "https://sawasawa.app/assets/logo.png",
+          "description": "منصة الزواج الإسلامي الشرعي الموثقة حيث يلتقي المسلمون للزواج الحلال",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "Customer Support",
+            "email": "support@sawasawa.app"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Sawa Sawa",
+          "operatingSystem": "ANDROID",
+          "applicationCategory": "LifestyleApplication",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "ratingCount": "18400"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "كيف يضمن تطبيق سوا سوا الضوابط الشرعية؟",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "يوفر تطبيق سوا سوا توثيقاً إلزامياً للهوية وصور السيلفي، ميثاق تعهد بالنية الصادقة للزواج، إمكانية طمس الصور لحفظ الحياء، وخيار إشراك ولي الأمر (المرافق) في المحادثات."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "هل صورة السيلفي الخاصة بالتحقق تظهر للمستخدمين الآخرين؟",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "كلا، صورة السيلفي مخصصة لمشرفي النظام فقط لمطابقة الملامح ومنع الحسابات المزيفة، ولا تظهر للمستخدمين نهائياً."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+
+    <style>
+        :root {
+            --primary: #174E43;
+            --primary-dark: #0F352E;
+            --primary-light: #EBF3F0;
+            --gold: #D4AF37;
+            --gold-dark: #8C6D1F;
+            --gold-light: #FFF9E6;
+            --text-dark: #12211C;
+            --text-muted: #566861;
+            --bg-light: #F7FAF9;
+            --white: #FFFFFF;
+            --border: #DCE5E2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Top Bar & Navbar */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-container {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--primary-dark);
+        }
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary), var(--gold-dark));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+            box-shadow: 0 4px 10px rgba(23,78,67,0.25);
+        }
+        .brand-text h1 { font-size: 20px; font-weight: 900; line-height: 1.2; }
+        .brand-text span { font-size: 11px; color: var(--gold-dark); font-weight: 700; }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            list-style: none;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 600;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--gold-dark); }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .lang-btn {
+            background: var(--primary-light);
+            border: 1px solid var(--border);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-cta {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 10px 22px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(23,78,67,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(23,78,67,0.4);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 80px 24px 70px;
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            align-items: center;
+            gap: 50px;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--gold-light);
+            border: 1px solid var(--gold);
+            color: var(--gold-dark);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .hero-title {
+            font-size: 46px;
+            font-weight: 900;
+            line-height: 1.25;
+            color: var(--primary-dark);
+            margin-bottom: 18px;
+        }
+        .hero-title span {
+            background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-desc {
+            font-size: 17px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            max-width: 580px;
+        }
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: white;
+            padding: 14px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 16px;
+            box-shadow: 0 6px 20px rgba(212,175,55,0.35);
+        }
+        .btn-outline {
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 12px 26px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .hero-mockup {
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+        .phone-frame {
+            width: 310px;
+            height: 620px;
+            background: #111;
+            border-radius: 46px;
+            padding: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.22);
+            border: 4px solid #2B3330;
+        }
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 36px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .screen-header {
+            background: var(--primary-dark);
+            color: white;
+            padding: 24px 16px 14px;
+            text-align: center;
+        }
+        .screen-card {
+            margin: 12px;
+            background: #F9FBFB;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 14px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .avatar-circle {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            border: 3px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            margin-bottom: 12px;
+        }
+
+        /* Pillars Section */
+        .section {
+            padding: 80px 24px;
+            max-width: 1240px;
+            margin: 0 auto;
+        }
+        .section-header {
+            text-align: center;
+            max-width: 680px;
+            margin: 0 auto 50px;
+        }
+        .section-tag {
+            color: var(--gold-dark);
+            font-weight: 800;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .section-title {
+            font-size: 34px;
+            font-weight: 900;
+            color: var(--primary-dark);
+            line-height: 1.3;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 26px;
+        }
+        .feature-card {
+            background: white;
+            border-radius: 22px;
+            padding: 32px 28px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+        }
+        .feature-icon {
+            width: 58px;
+            height: 58px;
+            background: var(--primary-light);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+        }
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        /* Download Center */
+        .download-box {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            border-radius: 30px;
+            padding: 60px 48px;
+            color: white;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            align-items: center;
+            gap: 40px;
+            box-shadow: 0 15px 40px rgba(15,53,46,0.3);
+        }
+        .download-info h2 { font-size: 34px; font-weight: 900; margin-bottom: 16px; }
+        .download-info p { opacity: 0.9; margin-bottom: 28px; font-size: 15px; }
+        .version-badge {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid var(--gold);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .qr-card {
+            background: white;
+            color: var(--text-dark);
+            padding: 24px;
+            border-radius: 22px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .qr-code-img {
+            width: 170px;
+            height: 170px;
+            background: #F0F3F2;
+            margin: 0 auto 14px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 54px;
+            border: 2px dashed var(--gold);
+        }
+
+        /* FAQ Accordion */
+        .faq-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .faq-question {
+            padding: 20px 24px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .faq-answer {
+            padding: 0 24px 20px;
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.8;
+            display: none;
+        }
+        .faq-item.active .faq-answer { display: block; }
+        .faq-item.active .faq-question { color: var(--primary); }
+
+        /* Legal / Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 650px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 32px;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        /* Footer */
+        footer {
+            background: #0C1D18;
+            color: #C1D0CC;
+            padding: 60px 24px 30px;
+            font-size: 13px;
+        }
+        .footer-container {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.5fr repeat(3, 1fr);
+            gap: 40px;
+            margin-bottom: 50px;
+        }
+        .footer-col h4 {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 18px;
+            font-weight: 800;
+        }
+        .footer-col ul { list-style: none; }
+        .footer-col ul li { margin-bottom: 10px; }
+        .footer-col ul li a { color: #A5B8B3; text-decoration: none; transition: color 0.2s; }
+        .footer-col ul li a:hover { color: var(--gold); }
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @media (max-width: 900px) {
+            .hero, .download-box { grid-template-columns: 1fr; text-align: center; }
+            .hero-buttons { justify-content: center; }
+            .hero-title { font-size: 34px; }
+            .nav-links { display: none; }
+            .footer-container { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="nav-container">
+            <a href="/" class="brand">
+                <div class="brand-logo">💍</div>
+                <div class="brand-text">
+                    <h1 id="brand-title">سوا سوا</h1>
+                    <span id="brand-tagline">حيث يلتقي المسلمون للزواج الحلال</span>
+                </div>
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="#how" id="nav-how">كيف يعمل؟</a></li>
+                <li><a href="#safety" id="nav-safety">الأمان والخصوصية</a></li>
+                <li><a href="#features" id="nav-features">المزايا الشرعية</a></li>
+                <li><a href="#pricing" id="nav-pricing">باقات الاشتراكات</a></li>
+                <li><a href="#faq" id="nav-faq">الأسئلة الشائعة</a></li>
+                <li><a href="/admin" target="_blank" style="color: var(--gold-dark); font-weight: 800;">لوحة الإدارة 🛡️</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="lang-btn" onclick="toggleLanguage()" id="btn-lang-toggle">English</button>
+                <a href="#download" class="btn-cta" id="btn-download-top">تحميل التطبيق</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge" id="hero-badge">✨ المنصة الإسلامية الأولى الموثقة للزواج الحلال</div>
+            <h2 class="hero-title" id="hero-heading">
+                سوا سوا<br>
+                <span>حيث يلتقي المسلمون للزواج الحلال</span>
+            </h2>
+            <p class="hero-desc" id="hero-text">
+                منصة عصرية مبنية على أسس الشريعة الإسلامية. حسابات مفحوصة وموثقة بالسيلفي، ميزة مشاركة ولي الأمر (المرافق)، وطمس الصور لحفظ الحياء والخصوصية الكاملة.
+            </p>
+            <div class="hero-buttons">
+                <a href="#download" class="btn-gold" id="btn-hero-primary">تحميل تطبيق الأندرويد مجاناً</a>
+                <a href="#how" class="btn-outline" id="btn-hero-secondary">تعرف على الضوابط الشرعية</a>
+            </div>
+        </div>
+
+        <div class="hero-mockup">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="screen-header">
+                        <span style="font-weight: 800; font-size: 14px;">سوا سوا • توافق شرعي 94%</span>
+                    </div>
+                    <div class="screen-card">
+                        <div class="avatar-circle">🧕</div>
+                        <h4 style="font-weight: 800; font-size: 16px;">سارة أحمد • 24 سنة</h4>
+                        <p style="font-size: 12px; color: var(--gold-dark); font-weight: 700; margin-bottom: 8px;">طبيبة أطفال • القاهرة (موثقة 🛡️)</p>
+                        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px;">
+                            "ملتزمة بالصلوات، أبحث عن شريك حياة يخاف الله، طموح، يقدر الأسرة والمودة والرحمة."
+                        </p>
+                        <div style="background: var(--gold-light); border: 1px solid var(--gold); border-radius: 12px; padding: 6px 12px; font-size: 11px; font-weight: bold; color: var(--gold-dark);">
+                            الولي متصل ومرافق للمحادثة 🤝
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Pillars Section -->
+    <section class="section" id="features">
+        <div class="section-header">
+            <div class="section-tag">ضوابط إسلامية راسخة</div>
+            <h2 class="section-title">لماذا يختار المسلمون منصة سوا سوا؟</h2>
+        </div>
+
+        <div class="grid-3">
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3>توثيق الهوية بالسيلفي</h3>
+                <p>فحص يدوي وآلي دقيق لكل حساب بالسيلفي لمنع أي حسابات وهمية أو غير جادة. شارة التوثيق تعني شخصاً حقيقياً يبحث عن الزواج.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👨‍👧</div>
+                <h3>إشراك ولي الأمر (المرافق)</h3>
+                <p>ميزة شرعية أصيلة تتيح للفتاة إضافة ولي أمرها أو مرافق ليصله إشعار بالمحادثات والاطمئنان على سير التعارف في مسار مبارك.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>طمس الصور وحفظ الحياء</h3>
+                <p>صورك محمية ولا تظهر إلا بإذنك الصريح لمن تثق بجدية تواصله ورغبته الحقيقية في التقدم الرسمي للخطوبة.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚖️</div>
+                <h3>ميثاق التعهد الأخلاقي</h3>
+                <p>يلتزم كل عضو قبل فتح حسابه بميثاق شرف ديني وأخلاقي بالنية الصادقة للزواج الحلال وحسن الخلق وعدم مخالفة الضوابط الشرعية.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌹</div>
+                <h3>باقات الورد الافتراضية</h3>
+                <p>نظام إهداء راقي يعبر عن الاحترام والتقدير، مع سجل مالي دقيق لحفظ الرصيد ومكافأة الحسابات الملتزمة.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📍</div>
+                <h3>حساب المسافة دون كشف الإحداثيات</h3>
+                <p>نساعدك على معرفة المتوافقين في مدينتك وقربهم الجغرافي دون الكشف نهائياً عن موقعك الدقيق لأي طرف ثالث.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="section" id="how" style="background: white; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="section-header">
+            <div class="section-tag">خطوات بسيطة ومباركة</div>
+            <h2 class="section-title">كيف تبدأ رحلتك نحو الزواج الحلال؟</h2>
+        </div>
+
+        <div class="grid-3">
+            <div class="feature-card" style="border: none; background: var(--bg-light);">
+                <div class="feature-icon" style="background: var(--gold-light); color: var(--gold-dark);">1</div>
+                <h3>التسجيل وتعهد الالتزام</h3>
+                <p>سجّل برقم هاتفك وتحقق برمز OTP، ثم وقّع ميثاق الالتزام بالأخلاق الإسلامية والنية الصادقة للزواج.</p>
+            </div>
+            <div class="feature-card" style="border: none; background: var(--bg-light);">
+                <div class="feature-icon" style="background: var(--gold-light); color: var(--gold-dark);">2</div>
+                <h3>إكمال الملف والتوثيق بالسيلفي</h3>
+                <p>أضف مؤهلاتك، عملك، تدينك، وتطلعاتك، ثم وثّق حسابك بصورة سيلفي سريعة لتحصل على شارة التوثيق الذهبية.</p>
+            </div>
+            <div class="feature-card" style="border: none; background: var(--bg-light);">
+                <div class="feature-icon" style="background: var(--gold-light); color: var(--gold-dark);">3</div>
+                <h3>التعارف الشرعي وطلب الولي</h3>
+                <p>تصفح من يتوافقون معك بنسبة توافق شرعي دقيقة، وتواصل باحترام مع خيار إشراك ولي الأمر في أي لحظة.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section class="section" id="download">
+        <div class="download-box">
+            <div class="download-info">
+                <div class="version-badge">إصدار الإنتاج الرسمي 1.0 (Android Production)</div>
+                <h2>حمّل تطبيق سوا سوا اليوم مجاناً</h2>
+                <p>ابدأ رحلتك المباركة في البحث عن شريك الحياة الصالح مع آلاف الشباب والبنات الملتزمين في مصر والخليج والعالم العربي.</p>
+                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                    <a href="https://sawasawa.app/download" class="btn-gold" style="display: inline-flex; align-items: center; gap: 8px;">
+                        <span>تنزيل ملف APK المباشر</span>
+                    </a>
+                    <a href="https://play.google.com/store/apps/details?id=com.aistudio.sawasawa.kzpj" target="_blank" class="btn-outline" style="border-color: white; color: white;">
+                        <span>Google Play Store</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="qr-card">
+                <div class="qr-code-img">📱</div>
+                <h4 style="font-weight: 800; font-size: 15px;">امسح رمز QR بهاتفك</h4>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">لتحميل التطبيق مباشرة على جهاز الأندرويد</p>
+                <div style="margin-top: 12px; font-size: 11px; color: var(--primary); font-weight: 700;">متوافق مع Android 7.0 فما فوق</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="section" id="faq">
+        <div class="section-header">
+            <div class="section-tag">الأسئلة الشائعة</div>
+            <h2 class="section-title">كل ما تود معرفته عن منصة سوا سوا</h2>
+        </div>
+
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div class="faq-item active">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>كيف يضمن التطبيق عدم وجود متلاعبين أو حسابات وهمية؟</span>
+                    <span>▾</span>
+                </div>
+                <div class="faq-answer">
+                    يعتمد التطبيق على التحقق برقم الهاتف الحقيقي عبر رمز OTP، بالإضافة إلى التوثيق الإلزامي بالسيلفي الذي يراجعه فريق المشرفين، مع ميثاق تعهد رسمي بحظر أي شخص يسيء الاستخدام نهائياً.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>هل يمكن للفتاة إخفاء صورها عن العامة؟</span>
+                    <span>▾</span>
+                </div>
+                <div class="faq-answer">
+                    نعم بالتأكيد! توفر المنصة ميزة طمس الصور تلقائياً، بحيث تظهر الصورة مشوشة بحياء، ولا يمكن لأي عضو رؤيتها إلا بعد أن تمنحه الفتاة إذناً صريحاً بذلك.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>كيف تعمل ميزة ولي الأمر (المرافق)؟</span>
+                    <span>▾</span>
+                </div>
+                <div class="faq-answer">
+                    يمكنك إدخال اسم ورقم أو بريد الولي، ليرسل له النظام رابط متابعة وإشعار في كل محادثة، مما يضفي راحة نفسية وبركة شرعية كاملة لجميع الأطراف.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>كيف يمكنني حذف حسابي وكافة بياناتي بشكل نهائي؟</span>
+                    <span>▾</span>
+                </div>
+                <div class="faq-answer">
+                    يمكنك طلب حذف الحساب مباشرة من داخل التطبيق في قسم الخصوصية، أو عبر نموذج الحذف القانوني الموجود أسفل الصفحة، حيث يتم مسح بياناتك نهائياً خلال 24 ساعة وفقاً لسياسات الخصوصية وحق النسيان (GDPR).
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-col">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                    <div style="font-size: 26px;">💍</div>
+                    <h3 style="color: white; font-size: 20px; font-weight: 900;">سوا سوا | Sawa Sawa</h3>
+                </div>
+                <p style="line-height: 1.7; margin-bottom: 16px;">
+                    المنصة الإسلامية الرائدة للزواج الحلال والتعارف الشرعي في مصر، السعودية، والعالم الإسلامي.
+                </p>
+                <p style="color: var(--gold); font-weight: 700;">الشعار الرسمي: "حيث يلتقي المسلمون للزواج الحلال"</p>
+            </div>
+
+            <div class="footer-col">
+                <h4>روابط سريعة</h4>
+                <ul>
+                    <li><a href="#features">المزايا والضوابط</a></li>
+                    <li><a href="#how">كيف يعمل التطبيق؟</a></li>
+                    <li><a href="#download">تنزيل التطبيق للأندرويد</a></li>
+                    <li><a href="/admin" target="_blank">لوحة الإدارة المستقلة (Web Admin)</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>الضوابط القانونية</h4>
+                <ul>
+                    <li><a href="javascript:void(0)" onclick="openModal('modal-privacy')">سياسة الخصوصية (Privacy Policy)</a></li>
+                    <li><a href="javascript:void(0)" onclick="openModal('modal-terms')">شروط وأحكام الاستخدام (Terms)</a></li>
+                    <li><a href="javascript:void(0)" onclick="openModal('modal-guidelines')">الميثاق الأخلاقي والمجتمعي</a></li>
+                    <li><a href="javascript:void(0)" onclick="openModal('modal-delete')">طلب حذف الحساب والبيانات (Delete Account)</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>الدعم والمساعدة</h4>
+                <ul>
+                    <li>البريد: support@sawasawa.app</li>
+                    <li>المقر: القاهرة، جمهورية مصر العربية</li>
+                    <li>ساعات الدعم: على مدار الساعة 24/7</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>© 2026 سوا سوا (Sawa Sawa). جميع الحقوق محفوظة ومسجلة طبقاً لأحكام الشريعة والقوانين المنظمة.</p>
+        </div>
+    </footer>
+
+    <!-- Privacy Policy Modal -->
+    <div class="modal-overlay" id="modal-privacy">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-privacy')">✕</button>
+            <h2 style="color: var(--primary-dark); margin-bottom: 14px; font-size: 22px;">سياسة الخصوصية وحماية البيانات</h2>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.8;">
+                <p><strong>1. التزامنا بحماية خصوصيتك:</strong> نلتزم في (سوا سوا) بأعلى معايير الخصوصية. لا نقوم ببيع أو مشاركة بياناتك الشخصية مع أي أطراف ثالثة لأغراض دعائية.</p>
+                <p style="margin-top: 10px;"><strong>2. بيانات الموقع الجغرافي:</strong> يتم استخدام الموقع لحساب المسافة التقريبية فقط بين الأعضاء ولا يتم مشاركة الإحداثيات الدقيقة GPS مع أي مستخدم.</p>
+                <p style="margin-top: 10px;"><strong>3. صور التحقق بالسيلفي:</strong> صور السيلفي محمية بصلاحيات أمنية مشددة وتستخدم حصراً لفحص الهوية من قبل المشرفين، ولا تظهر في الملف العام.</p>
+                <p style="margin-top: 10px;"><strong>4. حق الحذف والنسيان (GDPR):</strong> يحق لكل مستخدم طلب حذف حسابه وكافة صوره ومحادثاته نهائياً في أي وقت دون أي قيود.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms Modal -->
+    <div class="modal-overlay" id="modal-terms">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-terms')">✕</button>
+            <h2 style="color: var(--primary-dark); margin-bottom: 14px; font-size: 22px;">شروط وأحكام استخدام منصة سوا سوا</h2>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.8;">
+                <p>1. الهدف الحصري من استخدام المنصة هو الزواج الشرعي الحلال. يمنع منعاً باتاً استخدام المنصة لأي أغراض أخرى.</p>
+                <p style="margin-top: 10px;">2. يلتزم المستخدم بصدق البيانات المدخلة عن عمره، حالته الاجتماعية، ومؤهلاته.</p>
+                <p style="margin-top: 10px;">3. يحظر أي سلوك ينطوي على مضايقة، طلب صور غير لائقة، أو كلام يخالف الآداب العامة.</p>
+                <p style="margin-top: 10px;">4. للإدارة الحق الكامل في حظر أي حساب يخالف هذه الشروط ومصادرة رصيده مع توثيق المخالفة في سجل الرقابة.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Account Request Modal -->
+    <div class="modal-overlay" id="modal-delete">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-delete')">✕</button>
+            <h2 style="color: var(--primary-dark); margin-bottom: 14px; font-size: 22px;">طلب حذف الحساب والبيانات الشخصية</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">
+                سيتم مسح ملفك الشخصي، صورك، وسجل المحادثات نهائياً من خوادم وقاعدة بيانات سوا سوا خلال 24 ساعة.
+            </p>
+            <form onsubmit="submitDeleteAccount(event)">
+                <input type="text" id="del-phone" placeholder="رقم الهاتف أو البريد الإلكتروني المسجل به" required style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; font-size: 14px;">
+                <textarea id="del-reason" placeholder="سبب طلب الحذف (اختياري لمساعدتنا على تحسين الخدمة)" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 16px; font-size: 14px; height: 80px;"></textarea>
+                <button type="submit" class="btn-cta" style="width: 100%; background: #D32F2F; border: none; cursor: pointer;">تأكيد إرسال طلب الحذف النهائي</button>
+            </form>
+            <div id="del-status" style="display: none; margin-top: 14px; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 13px; background: #E8F5E9; color: #2E7D32;"></div>
+        </div>
+    </div>
+
+    <!-- Interactive Scripts -->
+    <script>
+        let currentLang = 'ar';
+
+        function toggleLanguage() {
+            if (currentLang === 'ar') {
+                currentLang = 'en';
+                document.documentElement.setAttribute('dir', 'ltr');
+                document.documentElement.setAttribute('lang', 'en');
+                document.getElementById('btn-lang-toggle').innerText = 'العربية';
+                document.getElementById('brand-title').innerText = 'Sawa Sawa';
+                document.getElementById('brand-tagline').innerText = 'Where Muslims Meet To Marry';
+                document.getElementById('nav-how').innerText = 'How It Works';
+                document.getElementById('nav-safety').innerText = 'Safety & Privacy';
+                document.getElementById('nav-features').innerText = 'Islamic Features';
+                document.getElementById('nav-pricing').innerText = 'Subscriptions';
+                document.getElementById('nav-faq').innerText = 'FAQ';
+                document.getElementById('btn-download-top').innerText = 'Download App';
+                document.getElementById('hero-badge').innerText = '✨ The #1 Verified Halal Matrimonial Platform';
+                document.getElementById('hero-heading').innerHTML = 'Sawa Sawa<br><span>Where Muslims Meet To Marry</span>';
+                document.getElementById('hero-text').innerText = 'A modern matrimonial service rooted in Islamic principles. Selfie verified identities, guardian (wali) integration, and modesty blur for complete privacy.';
+                document.getElementById('btn-hero-primary').innerText = 'Download Android App Free';
+                document.getElementById('btn-hero-secondary').innerText = 'Explore Halal Guidelines';
+            } else {
+                currentLang = 'ar';
+                document.documentElement.setAttribute('dir', 'rtl');
+                document.documentElement.setAttribute('lang', 'ar');
+                document.getElementById('btn-lang-toggle').innerText = 'English';
+                document.getElementById('brand-title').innerText = 'سوا سوا';
+                document.getElementById('brand-tagline').innerText = 'حيث يلتقي المسلمون للزواج الحلال';
+                document.getElementById('nav-how').innerText = 'كيف يعمل؟';
+                document.getElementById('nav-safety').innerText = 'الأمان والخصوصية';
+                document.getElementById('nav-features').innerText = 'المزايا الشرعية';
+                document.getElementById('nav-pricing').innerText = 'باقات الاشتراكات';
+                document.getElementById('nav-faq').innerText = 'الأسئلة الشائعة';
+                document.getElementById('btn-download-top').innerText = 'تحميل التطبيق';
+                document.getElementById('hero-badge').innerText = '✨ المنصة الإسلامية الأولى الموثقة للزواج الحلال';
+                document.getElementById('hero-heading').innerHTML = 'سوا سوا<br><span>حيث يلتقي المسلمون للزواج الحلال</span>';
+                document.getElementById('hero-text').innerText = 'منصة عصرية مبنية على أسس الشريعة الإسلامية. حسابات مفحوصة وموثقة بالسيلفي، ميزة مشاركة ولي الأمر (المرافق)، وطمس الصور لحفظ الحياء والخصوصية الكاملة.';
+                document.getElementById('btn-hero-primary').innerText = 'تحميل تطبيق الأندرويد مجاناً';
+                document.getElementById('btn-hero-secondary').innerText = 'تعرف على الضوابط الشرعية';
+            }
+        }
+
+        function toggleFaq(el) {
+            const item = el.parentElement;
+            item.classList.toggle('active');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        async function submitDeleteAccount(e) {
+            e.preventDefault();
+            const phoneOrEmail = document.getElementById('del-phone').value;
+            const reason = document.getElementById('del-reason').value;
+            try {
+                const res = await fetch('/api/users/delete-request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneOrEmail, reason })
+                });
+                const data = await res.json();
+                const statusDiv = document.getElementById('del-status');
+                statusDiv.style.display = 'block';
+                statusDiv.innerText = currentLang === 'ar' ? data.messageAr : data.messageEn;
+            } catch (err) {
+                alert('تم استلام طلبك وسيتواصل معك فريق الدعم لتأكيد الحذف.');
+            }
+        }
+    </script>
+</body>
+</html>

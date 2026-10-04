@@ -55,7 +55,28 @@ data class CandidateProfile(
     val activeHours: String = "مساءً (من 7:00 م إلى 11:00 م)",
     val isOnlineNow: Boolean = true,
     val isVip: Boolean = true,
-    val rosesReceivedCount: Int = 18
+    val rosesReceivedCount: Int = 18,
+    val country: String = "مصر",
+    val area: String = "المعادي",
+    val madhab: String = "شافعي / عام",
+    val nationality: String = "مصرية",
+    val origin: String = "مصر",
+    val childrenCount: Int = 0,
+    val desireForChildren: String = "نعم، أرغب في أطفال",
+    val previousMarriage: String = "لم يسبق الزواج",
+    val smoking: String = "غير مدخن",
+    val lifestyle: String = "صحي ومتزن",
+    val incomeRange: String = "متوسط إلى مرتفع",
+    val interests: String = "القراءة، السفر، العمل التطوعي، الرياضة الخفيفة",
+    val hobbies: String = "الخط العربي، القراءة",
+    val partnerPreferences: String = "شخص ذو خلق ودين يقدر الحياة الزوجية والمودة",
+    val religiousPreferences: String = "المحافظة على الصلاة وتحري الحلال",
+    val familyPreferences: String = "تقدير الترابط الأسري والاحترام المتبادل",
+    val hiddenConditions: String? = "اشتراط استقلالية السكن وإتمام الدراسات العليا",
+    val hiddenConditionsAccessGranted: Boolean = false,
+    val compatibilityScore: Int = 94,
+    val referralCode: String = "SAWA100",
+    val referralCount: Int = 0
 )
 
 @Entity(tableName = "chat_messages")
@@ -134,7 +155,29 @@ data class CurrentUserProfile(
     val revealedPhotoUserIds: Set<String> = emptySet(),
     val likedCandidateIds: Set<String> = emptySet(),
     val hasAcceptedCommitmentAgreement: Boolean = false,
-    val commitmentAgreementTimestamp: Long = 0L
+    val commitmentAgreementTimestamp: Long = 0L,
+    val country: String = "مصر",
+    val area: String = "المعادي",
+    val madhab: String = "شافعي / عام",
+    val nationality: String = "مصرية",
+    val origin: String = "مصر",
+    val childrenCount: Int = 0,
+    val desireForChildren: String = "نعم، أرغب في الإنجاب وتكوين أسرة صالحة",
+    val previousMarriage: String = "لم يسبق الزواج",
+    val smoking: String = "غير مدخنة",
+    val lifestyle: String = "ملتزمة، متزنة، محبة للعائلة والصحة",
+    val incomeRange: String = "مستور والحمد لله",
+    val interests: String = "الطب، رعاية الأطفال، القراءة، التطوع الخيري",
+    val hobbies: String = "القراءة، الطبخ الصحي، المشي",
+    val partnerPreferences: String = "شخص يخاف الله، طموح، يقدر المودة والرحمة والاستقرار الأسري",
+    val religiousPreferences: String = "المحافظة على الصلوات، الصدق، الأمانة",
+    val familyPreferences: String = "بر الوالدين وصلة الرحم",
+    val hiddenConditions: String? = "توفير سكن مستقل ومراعاة طبيعة عملي في الطب",
+    val hiddenConditionsAccessGrantedTo: Set<String> = emptySet(),
+    val referralCode: String = "SAWA789",
+    val referredBy: String? = null,
+    val referralCount: Int = 3,
+    val registrationStep: String = "COMPLETED"
 )
 
 data class PhotoVerificationRequest(
@@ -228,3 +271,150 @@ enum class MainNavigationTab {
     CHATS,
     PROFILE
 }
+
+enum class RegistrationFlowStep {
+    WELCOME,
+    LANGUAGE,
+    COUNTRY,
+    PHONE_INPUT,
+    OTP_VERIFY,
+    ACCOUNT_CREATION,
+    COMMITMENT_AGREEMENT,
+    PROFILE_SETUP,
+    PHOTO_UPLOAD,
+    SELFIE_VERIFY,
+    PREFERENCES,
+    LOCATION_PERMISSION,
+    NOTIFICATIONS_PERMISSION,
+    COMPLETED
+}
+
+data class CommitmentAgreementRecord(
+    val agreementVersion: String = "2.4",
+    val acceptedAt: Long = System.currentTimeMillis(),
+    val userId: String = "",
+    val language: String = "ar",
+    val ipOrDeviceInfo: String = "Android-Device-Verified"
+)
+
+enum class AdminRole {
+    SUPER_ADMIN,
+    ADMIN,
+    MODERATOR,
+    VERIFICATION_AGENT,
+    SUPPORT_AGENT,
+    MARKETING_MANAGER,
+    FINANCE_MANAGER,
+    CONTENT_MANAGER,
+    ANALYTICS_MANAGER
+}
+
+data class MatchingWeights(
+    val preferencesWeight: Float = 0.25f,
+    val distanceWeight: Float = 0.15f,
+    val interestsWeight: Float = 0.15f,
+    val religiousWeight: Float = 0.20f,
+    val intentionsWeight: Float = 0.15f,
+    val completenessWeight: Float = 0.10f
+)
+
+data class CompatibilityBreakdown(
+    val totalScore: Int,
+    val religiousScore: Int,
+    val intentionsScore: Int,
+    val interestsScore: Int,
+    val distanceScore: Int,
+    val preferencesScore: Int,
+    val summaryAr: String,
+    val summaryEn: String
+)
+
+data class RoseLedgerEntry(
+    val id: String = "",
+    val userId: String = "",
+    val type: String = "EARN", // EARN, BUY, SEND, RECEIVE, SPEND, REFUND, ADMIN_GRANT
+    val amount: Int = 1,
+    val balanceAfter: Int = 0,
+    val counterpartyId: String? = null,
+    val counterpartyName: String? = null,
+    val description: String = "",
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class HiddenConditionsRequest(
+    val id: String,
+    val requesterId: String,
+    val requesterName: String,
+    val targetUserId: String,
+    val status: String = "PENDING", // PENDING, ACCEPTED, REJECTED, REVOKED
+    val requestedAt: Long = System.currentTimeMillis()
+)
+
+data class WaliRecord(
+    val name: String,
+    val phone: String,
+    val relationship: String,
+    val isApproved: Boolean = false,
+    val canViewChats: Boolean = true
+)
+
+data class CampaignRecord(
+    val id: String,
+    val name: String,
+    val type: String, // INSTALL, REGISTRATION, SUBSCRIPTION, ROSES, BRAND
+    val status: String = "ACTIVE", // ACTIVE, PAUSED, COMPLETED
+    val dailyBudget: Double,
+    val totalBudget: Double,
+    val country: String = "مصر",
+    val gender: String = "ALL",
+    val targetAgeMin: Int = 20,
+    val targetAgeMax: Int = 45,
+    val impressions: Int = 0,
+    val clicks: Int = 0,
+    val conversions: Int = 0,
+    val spend: Double = 0.0,
+    val roas: Double = 0.0
+)
+
+data class SocialMediaDraft(
+    val id: String,
+    val platform: String, // FACEBOOK, INSTAGRAM, TIKTOK, YOUTUBE, X, TELEGRAM, WHATSAPP
+    val title: String,
+    val captionAr: String,
+    val captionEn: String,
+    val hashtags: String,
+    val status: String = "DRAFT", // DRAFT, SCHEDULED, PUBLISHED
+    val scheduledDate: String = "2026-10-10"
+)
+
+data class CouponRecord(
+    val code: String,
+    val discountPercent: Int,
+    val validUntil: String,
+    val usageCount: Int = 0,
+    val maxUsage: Int = 500,
+    val isActive: Boolean = true
+)
+
+data class AuditLogRecord(
+    val id: String,
+    val adminUser: String,
+    val role: String,
+    val action: String,
+    val targetResource: String,
+    val details: String,
+    val timestamp: String,
+    val ipAddress: String = "127.0.0.1"
+)
+
+data class SupportTicketRecord(
+    val id: String,
+    val userId: String,
+    val userName: String,
+    val subject: String,
+    val category: String,
+    val priority: String = "NORMAL",
+    val status: String = "OPEN", // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+    val createdAt: String,
+    val messagesCount: Int = 1
+)

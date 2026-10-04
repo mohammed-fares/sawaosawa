@@ -41,6 +41,8 @@ import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Work
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -90,6 +92,7 @@ fun CandidateDetailScreen(
     onLike: () -> Unit,
     onToggleBlur: () -> Unit,
     onSendRose: () -> Unit = {},
+    onRequestHiddenConditions: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isArabic = language == AppLanguage.ARABIC
@@ -251,6 +254,136 @@ fun CandidateDetailScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = RadiantGoldDark
                                 )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    // Compatibility Score & Harmony Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = RadiantGoldContainer),
+                        border = CardDefaults.outlinedCardBorder()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .clip(CircleShape)
+                                    .background(RadiantGold),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "${candidate.compatibilityScore}%",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.White
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column {
+                                Text(
+                                    text = if (isArabic) "نسبة التوافق الشرعي والمطابقة: ${candidate.compatibilityScore}% 💍" else "Halal Compatibility Score: ${candidate.compatibilityScore}% 💍",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = RadiantGoldDark
+                                )
+                                Text(
+                                    text = if (isArabic)
+                                        "توافق كبير في المحافظة على الصلوات، الرغبة في الإنجاب وتكوين أسرة، ونمط الحياة."
+                                    else
+                                        "Strong harmony in prayer habits, family goals, and shared values.",
+                                    fontSize = 12.sp,
+                                    color = PetroleumGreenDark,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    // Hidden Conditions Card (شروط الزواج الخاصة مع طلب الإذن)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (candidate.hiddenConditionsAccessGranted) Color(0xFFE8F5E9) else Color(0xFFFBF8EE)
+                        ),
+                        border = CardDefaults.outlinedCardBorder()
+                    ) {
+                        Column(modifier = Modifier.padding(18.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (candidate.hiddenConditionsAccessGranted) Icons.Default.LockOpen else Icons.Default.Lock,
+                                        contentDescription = null,
+                                        tint = if (candidate.hiddenConditionsAccessGranted) Color(0xFF2E7D32) else RadiantGoldDark,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (isArabic) "شروط الزواج الخاصة 📜" else "Marriage Conditions 📜",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = PetroleumGreenDark
+                                    )
+                                }
+
+                                if (candidate.hiddenConditionsAccessGranted) {
+                                    Text(
+                                        text = if (isArabic) "تم منح الإذن ✓" else "Access Granted ✓",
+                                        color = Color(0xFF2E7D32),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            if (candidate.hiddenConditionsAccessGranted) {
+                                Text(
+                                    text = candidate.hiddenConditions ?: (if (isArabic) "لا توجد شروط خاصة إضافية." else "No additional conditions specified."),
+                                    fontSize = 13.sp,
+                                    color = Color.DarkGray,
+                                    lineHeight = 20.sp
+                                )
+                            } else {
+                                Text(
+                                    text = if (isArabic)
+                                        "شروط الزواج الخاصة مخفية ومحمية لحفظ الخصوصية. يمكنك إرسال طلب استئذان لرؤيتها كدلالة على جديتك واهتمامك بالطرف الآخر."
+                                    else
+                                        "Conditions are protected for privacy. You may request permission to view them as a gesture of serious interest.",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray,
+                                    lineHeight = 18.sp
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(
+                                    onClick = onRequestHiddenConditions,
+                                    colors = ButtonDefaults.buttonColors(containerColor = RadiantGoldDark),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = if (isArabic) "إرسال طلب إذن للاطلاع على الشروط 📩" else "Request Permission to View Conditions 📩",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = Color.White
+                                    )
+                                }
                             }
                         }
                     }

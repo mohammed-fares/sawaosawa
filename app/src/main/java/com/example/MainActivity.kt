@@ -38,6 +38,7 @@ import com.example.ui.screens.DiscoveryScreen
 import com.example.ui.screens.EditProfileScreen
 import com.example.ui.screens.FiltersScreen
 import com.example.ui.screens.CommitmentAgreementScreen
+import com.example.ui.screens.RegistrationWizardScreen
 import com.example.ui.screens.GoldCenterScreen
 import com.example.ui.screens.MatchCelebrationScreen
 import com.example.ui.screens.MyProfileScreen
@@ -54,9 +55,15 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        intent.dataString?.let { uri -> viewModel.handleDeepLink(uri) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        intent?.dataString?.let { uri -> viewModel.handleDeepLink(uri) }
         setContent {
             val uiState by viewModel.uiState.collectAsState()
             val isArabic = uiState.language == AppLanguage.ARABIC
@@ -91,8 +98,20 @@ class MainActivity : ComponentActivity() {
                         is ScreenState.Onboarding -> {
                             OnboardingScreen(
                                 language = uiState.language,
-                                onContinue = { viewModel.openAuth() },
+                                onContinue = { viewModel.openRegistrationWizard() },
                                 onToggleLanguage = { viewModel.toggleLanguage() }
+                            )
+                        }
+
+                        is ScreenState.RegistrationWizard -> {
+                            RegistrationWizardScreen(
+                                language = uiState.language,
+                                currentStep = screen.step,
+                                userProfile = uiState.currentUser,
+                                onStepCompleted = { nextStep, updatedProfile ->
+                                    viewModel.onRegistrationStepCompleted(nextStep, updatedProfile)
+                                },
+                                onBack = { viewModel.navigateBack() }
                             )
                         }
 
@@ -259,7 +278,9 @@ class MainActivity : ComponentActivity() {
                                         iconEmoji = "🌹",
                                         title = if (isArabic) "تم تحديد شرط تجديد العضوية بـ $t وردة" else "Renewal set to $t roses"
                                     )
-                                }
+                                },
+                                reports = uiState.reports,
+                                onDismissReport = { id -> viewModel.dismissReport(id) }
                             )
                         }
 

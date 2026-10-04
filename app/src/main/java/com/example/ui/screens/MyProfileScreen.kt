@@ -96,6 +96,8 @@ import com.example.ui.theme.RadiantGold
 import com.example.ui.theme.RadiantGoldContainer
 import com.example.ui.theme.RadiantGoldDark
 
+import androidx.compose.ui.platform.LocalContext
+
 @Composable
 fun MyProfileScreen(
     user: CurrentUserProfile,
@@ -121,6 +123,7 @@ fun MyProfileScreen(
     onSaveAudioBio: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val isArabic = language == AppLanguage.ARABIC
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -129,13 +132,8 @@ fun MyProfileScreen(
     var bioSeconds by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var isPlayingBio by remember { mutableStateOf(false) }
 
-    val contactsPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            onInviteContactsSuccess(28)
-        }
-    }
+    // Zero-permission Android share invite flow for contact invitation
+
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -531,13 +529,18 @@ fun MyProfileScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                    // Permission 1: Contacts Invitation
                     ProfileMenuRow(
-                        title = if (isArabic) "دعوة جهات الاتصال وكسب مكافآت 🎁" else "Invite Contacts & Earn Rewards 🎁",
-                        subtitle = if (isArabic) "صلاحية دفتر الهاتف لإرسال دعوات واكتساب 10 ورود وتعزيز مجاني" else "Read contacts to invite friends and earn bonus roses",
+                        title = if (isArabic) "دعوة جهات الاتصال والأصدقاء 🎁" else "Invite Contacts & Friends 🎁",
+                        subtitle = if (isArabic) "مشاركة رابط ودعوة لكسب 10 ورود وتعزيز مجاني" else "Share invite link to earn 10 bonus roses",
                         icon = Icons.Default.Contacts,
                         onClick = {
-                            contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                            val inviteIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_SUBJECT, if (isArabic) "دعوة لتطبيق سوا سوا للزواج الشرعي" else "Invite to Sawa Sawa Halal Marriage App")
+                                putExtra(android.content.Intent.EXTRA_TEXT, if (isArabic) "انضم إلي في تطبيق سوا سوا للزواج الشرعي والمودة والرحمة: https://sawasawa.app/invite?ref=SAWA100" else "Join me on Sawa Sawa for halal marriage: https://sawasawa.app/invite?ref=SAWA100")
+                            }
+                            context.startActivity(android.content.Intent.createChooser(inviteIntent, if (isArabic) "مشاركة رابط الدعوة" else "Share Invite Link"))
+                            onInviteContactsSuccess(1)
                         }
                     )
 

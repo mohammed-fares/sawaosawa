@@ -1,0 +1,35 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role in ['SUPER_ADMIN', 'ADMIN', 'MODERATOR'];
+    }
+
+    // Public Profile Photos
+    match /profile_photos/{userId}/{photoId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Verification Selfies - Confidential (Never exposed to public or other users)
+    match /verification_selfies/{userId}/{selfieId} {
+      allow create: if isOwner(userId) && request.resource.size < 10 * 1024 * 1024;
+      allow read: if isAdmin() || isOwner(userId);
+      allow delete: if isAdmin() || isOwner(userId);
+    }
+
+    // Chat Attachments & Images
+    match /chat_media/{conversationId}/{mediaId} {
+      allow read, write: if isAuthenticated() && request.resource.size < 15 * 1024 * 1024;
+    }
+  }
+}

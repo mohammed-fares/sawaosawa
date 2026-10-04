@@ -129,6 +129,8 @@ fun AdminDashboardScreen(
     onUpdateLogoStyle: (String) -> Unit = {},
     onUpdateColorPalette: (Long, Long) -> Unit = { _, _ -> },
     onUpdateRosesThreshold: (Int) -> Unit = {},
+    reports: List<AdminReport> = emptyList(),
+    onDismissReport: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isArabic = language == AppLanguage.ARABIC
@@ -156,29 +158,7 @@ fun AdminDashboardScreen(
     var showAddMemberDialog by remember { mutableStateOf(false) }
     var showBroadcastDialog by remember { mutableStateOf(false) }
 
-    // Reports mock list
-    val reports = remember {
-        mutableStateListOf(
-            AdminReport(
-                id = "r1",
-                reporterName = "سارة",
-                reportedUserId = "c1",
-                reportedUserName = "عدنان",
-                reason = "طلب التواصل خارج التطبيق بدون علم الولي",
-                timestamp = "منذ 15 دقيقة",
-                status = "PENDING"
-            ),
-            AdminReport(
-                id = "r2",
-                reporterName = "نور",
-                reportedUserId = "c4",
-                reportedUserName = "نادية",
-                reason = "اشتباه في صورة الحساب الشخصي",
-                timestamp = "منذ ساعتين",
-                status = "PENDING"
-            )
-        )
-    }
+
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -744,14 +724,14 @@ fun AdminDashboardScreen(
                                                 horizontalArrangement = Arrangement.End,
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                TextButton(onClick = { reports.remove(report) }) {
+                                                TextButton(onClick = { onDismissReport(report.id) }) {
                                                     Text(if (isArabic) "تجاهل" else "Dismiss", color = Color.Gray)
                                                 }
                                                 Spacer(modifier = Modifier.width(6.dp))
                                                 Button(
                                                     onClick = {
                                                         onToggleBan(report.reportedUserId)
-                                                        reports.remove(report)
+                                                        onDismissReport(report.id)
                                                     },
                                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
                                                     shape = RoundedCornerShape(12.dp)

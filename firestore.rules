@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role in ['SUPER_ADMIN', 'ADMIN', 'MODERATOR'];
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'SUPER_ADMIN';
+    }
+
+    // Public candidate profiles (basic non-sensitive info only)
+    match /candidates/{candidateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // User account data and private profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
+
+      // Hidden marital conditions subcollection
+      match /private_conditions/{condId} {
+        allow read: if isAuthenticated() && (
+          request.auth.uid == userId ||
+          exists(/databases/$(database)/documents/users/$(userId)/condition_grants/$(request.auth.uid)) ||
+          isAdmin()
+        );
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // Verification documents (Selfies & ID) - Strictly protected
+    match /verifications/{verId} {
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Chat messages (only participants or chaperone can read)
+    match /conversations/{conversationId} {
+      allow read, write: if isAuthenticated() && (
+        request.auth.uid in resource.data.participants ||
+        request.auth.token.isChaperone == true ||
+        isAdmin()
+      );
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && (
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants ||
+          request.auth.token.isChaperone == true
+        );
+        allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if isOwner(resource.data.senderId) || isAdmin();
+      }
+    }
+
+    // Payments and Transaction Records
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // Virtual Rose Ledger (Immutable financial/activity records)
+    match /rose_ledger/{entryId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if false; // Immutable ledger
+    }
+
+    // Reports & Complaints
+    match /reports/{reportId} {
+      allow create: if isAuthenticated();
+      allow read, update: if isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Audit logs & System settings
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Append-only audit log
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+  }
+}
